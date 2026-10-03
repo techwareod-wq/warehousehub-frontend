@@ -10,6 +10,7 @@ import { mapsEnabled } from "@/components/maps/maps-provider"
 import { browserApi } from "@/core/api"
 import { env } from "@/core/config/env"
 import { getSessionId, rememberSearchId } from "@/core/session/visitor-session"
+import { useSiteFeature } from "@/features/users"
 import { searchApi, type SearchContext } from "../api/search.api"
 import { SORT_OPTIONS, type FilterCatalog, type MapData, type SearchQuery, type SearchResult, type SortKey } from "../entities/search.entity"
 import { queryFromParams, queryToParams } from "../lib/query-params"
@@ -35,7 +36,9 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
   const params = useSearchParams()
   const paramString = params.toString()
   const query = useMemo(() => queryFromParams(new URLSearchParams(paramString)), [paramString])
-  const aiText = env.aiSearchEnabled ? (new URLSearchParams(paramString).get("ai") ?? "") : ""
+  const canAI = useSiteFeature("ai_search")
+  const aiEnabled = env.aiSearchEnabled && canAI
+  const aiText = aiEnabled ? (new URLSearchParams(paramString).get("ai") ?? "") : ""
 
   const [result, setResult] = useState<SearchResult | null>(null)
   const [error, setError] = useState<unknown>(null)

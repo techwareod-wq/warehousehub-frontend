@@ -1,7 +1,7 @@
 import type { HttpClient, Page } from "@/core/api"
 import type { ProfileNetwork, UpdateProfileRequestNetwork, UserListNetwork } from "../network/users.network"
-import { toProfile, toSetAccessRequest, toUserPage } from "../mappers/users.mapper"
-import type { AccessChange, Profile, User } from "../entities/users.entity"
+import { toProfile, toSetAccessRequest, toSetFeaturesRequest, toUserPage } from "../mappers/users.mapper"
+import type { AccessChange, FeaturesChange, Profile, User } from "../entities/users.entity"
 
 /** Admin user management (superuser). */
 export function usersApi(client: HttpClient) {
@@ -11,6 +11,9 @@ export function usersApi(client: HttpClient) {
     },
     async setAccess(change: AccessChange): Promise<void> {
       await client.post("/v1/admin/users/access", toSetAccessRequest(change))
+    },
+    async setFeatures(change: FeaturesChange): Promise<void> {
+      await client.post("/v1/admin/users/features", toSetFeaturesRequest(change))
     },
   }
 }

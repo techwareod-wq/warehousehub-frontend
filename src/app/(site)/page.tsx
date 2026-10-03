@@ -3,6 +3,7 @@ import { BadgeCheck, MapPinned, Sparkles } from "lucide-react"
 import { env } from "@/core/config/env"
 import { SearchBox } from "@/features/search"
 import { loadFilterCatalog } from "@/features/search/lib/server-catalog"
+import { hasSiteFeature } from "@/features/users/lib/server-access"
 
 const POINTS = [
   { icon: MapPinned, title: "Search by place or pincode", body: "Results widen automatically until you have real options nearby." },
@@ -11,7 +12,8 @@ const POINTS = [
 ]
 
 export default async function HomePage() {
-  const catalog = await loadFilterCatalog()
+  const canSearch = await hasSiteFeature("search")
+  const catalog = canSearch ? await loadFilterCatalog() : null
   return (
     <div className="flex flex-col">
       <section className="border-b border-border bg-gradient-to-b from-muted/60 to-background">
@@ -23,7 +25,7 @@ export default async function HomePage() {
             {env.siteName} lists verified warehouse space across India. Search by location, size, rent and the facilities your
             operation needs.
           </p>
-          <SearchBox className="w-full max-w-2xl text-left" />
+          {canSearch && <SearchBox className="w-full max-w-2xl text-left" />}
           {catalog && catalog.industries.length > 0 && (
             <div className="flex flex-wrap justify-center gap-2 text-sm">
               <span className="text-muted-foreground">Popular:</span>

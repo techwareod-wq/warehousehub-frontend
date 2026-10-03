@@ -1,15 +1,18 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 
 /**
- * Clerk on every request (so auth() works in pages and /api/proxy). Only the
- * admin panel and the account page need a session; the public site, search
- * and listing pages are open. The admin layout additionally checks staff
- * access with the backend (whoami) — the backend enforces every permission.
+ * Clerk on every request (so auth() works in pages and /api/proxy). For now
+ * the whole site needs a session: the backend gates every visitor route on
+ * per-user features (WithFeature), so signed-out visitors can't use anything.
+ * Only sign-in / sign-up, the API proxy (the backend answers 401 itself),
+ * robots and the sitemap stay open. The (site) layout then checks the
+ * visitor's features and the admin layout checks staff access (whoami); the
+ * backend enforces both again on every call.
  */
-const isProtected = createRouteMatcher(["/admin(.*)", "/account(.*)"])
+const isOpen = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)", "/api(.*)", "/robots.txt", "/sitemap.xml"])
 
 export default clerkMiddleware(async (auth, request) => {
-  if (isProtected(request)) {
+  if (!isOpen(request)) {
     await auth.protect()
   }
 })

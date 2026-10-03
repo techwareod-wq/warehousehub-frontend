@@ -1,13 +1,13 @@
 import "server-only"
-import { publicServerApi } from "@/core/api/server-client"
+import { serverApi } from "@/core/api/server-client"
 import { env } from "@/core/config/env"
 import { searchApi } from "../api/search.api"
 import type { FilterCatalog } from "../entities/search.entity"
 
-/** The public filter catalog for server pages (cached 60 s); null if the API is down. */
+/** The filter catalog for server pages (needs the search feature); null if unavailable. */
 export async function loadFilterCatalog(): Promise<FilterCatalog | null> {
   try {
-    return await searchApi(publicServerApi(60)).catalog(env.defaultCountry)
+    return await searchApi(serverApi()).catalog(env.defaultCountry)
   } catch {
     return null
   }

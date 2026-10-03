@@ -1,20 +1,24 @@
 import type { Metadata } from "next"
 import { cache } from "react"
 import { notFound, permanentRedirect } from "next/navigation"
-import { publicServerApi } from "@/core/api/server-client"
+import { serverApi } from "@/core/api/server-client"
+import { FeatureNotIncluded } from "@/components/site/no-site-access"
 import { env } from "@/core/config/env"
 import { EnquiryForm } from "@/features/enquiries"
 import { ListingView, listingsApi } from "@/features/listings"
 import { ListingCardView } from "@/features/search"
 import { loadFilterCatalog } from "@/features/search/lib/server-catalog"
+import { hasSiteFeature } from "@/features/users/lib/server-access"
 
 type Props = { params: Promise<{ slug: string }> }
 
-// One lookup per request, shared by generateMetadata and the page.
-const lookup = cache((slug: string) => listingsApi(publicServerApi(60)).lookup(slug))
+// One lookup per request, shared by generateMetadata and the page. Per-user
+// (the listings feature gate), so uncached.
+const lookup = cache((slug: string) => listingsApi(serverApi()).lookup(slug))
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
+  if (!(await hasSiteFeature("listings"))) return { title: "Warehouse", robots: { index: false } }
   const res = await lookup(slug)
   if (res.kind === "gone") return { title: "Listing removed", robots: { index: false } }
   if (res.kind !== "found") return { title: "Warehouse not found", robots: { index: false } }
@@ -29,6 +33,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ListingPage({ params }: Props) {
   const { slug } = await params
+  if (!(await hasSiteFeature("listings"))) return <FeatureNotIncluded what="Listings" />
+  const canEnquire = await hasSiteFeature("enquiries")
   const res = await lookup(slug)
   if (res.kind === "moved") permanentRedirect(res.path)
   if (res.kind === "missing") notFound()
@@ -49,7 +55,7 @@ export default async function ListingPage({ params }: Props) {
             <ListingCardView key={c.shortId} card={c} industryNames={industryNames} />
           ))}
         </div>
-        <EnquiryForm />
+        {canEnquire && <EnquiryForm />}
       </div>
     )
   }
@@ -61,9 +67,11 @@ export default async function ListingPage({ params }: Props) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(listing.seo.jsonLd).replace(/</g, "\\u003c") }} />
       )}
       <ListingView listing={listing} industryNames={industryNames} />
-      <aside className="lg:sticky lg:top-20 lg:self-start">
-        <EnquiryForm listingShortId={listing.shortId} listingName={listing.name} />
-      </aside>
+      {canEnquire && (
+        <aside className="lg:sticky lg:top-20 lg:self-start">
+          <EnquiryForm listingShortId={listing.shortId} listingName={listing.name} />
+        </aside>
+      )}
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { MapPin, Search, Sparkles } from "lucide-react"
 import { Button, Input, Textarea } from "@/components/ui"
 import { env } from "@/core/config/env"
+import { useSiteFeature } from "@/features/users"
 import { cn } from "@/lib/utils"
 
 /**
@@ -14,7 +15,9 @@ import { cn } from "@/lib/utils"
  */
 export function SearchBox({ className }: { className?: string }) {
   const router = useRouter()
-  const [mode, setMode] = useState<"simple" | "ai">(env.aiSearchEnabled ? "ai" : "simple")
+  const canAI = useSiteFeature("ai_search")
+  const aiEnabled = env.aiSearchEnabled && canAI
+  const [mode, setMode] = useState<"simple" | "ai">(aiEnabled ? "ai" : "simple")
   const [place, setPlace] = useState("")
   const [text, setText] = useState("")
 
@@ -28,7 +31,7 @@ export function SearchBox({ className }: { className?: string }) {
 
   return (
     <form onSubmit={submit} className={cn("flex flex-col gap-3 rounded-3xl border border-border bg-card p-4 shadow-sm", className)}>
-      {env.aiSearchEnabled && (
+      {aiEnabled && (
         <div className="flex gap-1 self-start rounded-full bg-muted p-1 text-xs">
           <button
             type="button"

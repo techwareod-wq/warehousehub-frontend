@@ -1,3 +1,5 @@
 export { profileApi, usersApi } from "./api/users.api"
-export type { AccessChange, AssignablePermission, Profile, User } from "./entities/users.entity"
+export type { AccessChange, AssignablePermission, FeaturesChange, Profile, SiteFeature, User } from "./entities/users.entity"
+export { SITE_FEATURES } from "./entities/users.entity"
 export { ProfileForm } from "./components/profile-form"
+export { SiteAccessProvider, useSiteFeature } from "./components/site-access-context"

@@ -1,8 +1,13 @@
 import { toPermissionSet, toRole } from "@/features/access"
 import { parseDate } from "@/lib/format"
 import type { Page } from "@/core/api"
-import type { ProfileNetwork, SetAccessRequestNetwork, UserListNetwork, UserNetwork } from "../network/users.network"
-import type { AccessChange, Profile, User } from "../entities/users.entity"
+import type { ProfileNetwork, SetAccessRequestNetwork, SetFeaturesRequestNetwork, UserListNetwork, UserNetwork } from "../network/users.network"
+import { SITE_FEATURES, type AccessChange, type FeaturesChange, type Profile, type SiteFeature, type User } from "../entities/users.entity"
+
+/** Known site features only, in canonical order. */
+function toSiteFeatures(raw?: string[] | null): SiteFeature[] {
+  return SITE_FEATURES.filter((f) => raw?.includes(f))
+}
 
 export function toUser(n: UserNetwork): User {
   const role = toRole(n.role)
@@ -21,6 +26,7 @@ export function toUser(n: UserNetwork): User {
     name: n.name,
     role,
     can,
+    features: toSiteFeatures(n.features),
     phone: n.phone ?? "",
     company: n.company ?? "",
     createdAt: parseDate(n.created_at),
@@ -48,6 +54,10 @@ export function toSetAccessRequest(c: AccessChange): SetAccessRequestNetwork {
   }
 }
 
+export function toSetFeaturesRequest(c: FeaturesChange): SetFeaturesRequestNetwork {
+  return { targetUserId: c.userId, features: c.features, expectedRoleUpdatedAt: c.roleVersion }
+}
+
 export function toProfile(n: ProfileNetwork): Profile {
-  return { email: n.email, name: n.name, phone: n.phone ?? "", company: n.company ?? "" }
+  return { email: n.email, name: n.name, features: toSiteFeatures(n.features), phone: n.phone ?? "", company: n.company ?? "" }
 }

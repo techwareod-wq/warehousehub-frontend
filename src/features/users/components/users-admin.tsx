@@ -8,7 +8,7 @@ import { ApiError, browserApi, errorMessage } from "@/core/api"
 import { useLoad } from "@/core/hooks/use-load"
 import { formatDate } from "@/lib/format"
 import { usersApi } from "../api/users.api"
-import type { AssignablePermission, User } from "../entities/users.entity"
+import type { AssignablePermission, SiteFeature, User } from "../entities/users.entity"
 
 const api = usersApi(browserApi)
 
@@ -17,6 +17,64 @@ const PERMS: { key: AssignablePermission; label: string; description: string }[]
   { key: "approver", label: "Approver", description: "Approve / reject, archive / restore, read the change log and analytics." },
   { key: "attributes", label: "Attributes", description: "Edit the attribute tree and industry rules." },
 ]
+
+const FEATURES: { key: SiteFeature; label: string; description: string }[] = [
+  { key: "search", label: "Search", description: "Search, map and filters." },
+  { key: "ai_search", label: "AI search", description: "Describe the space in plain language." },
+  { key: "listings", label: "Listings", description: "Open warehouse listing pages." },
+  { key: "enquiries", label: "Enquiries", description: "Send an enquiry." },
+]
+
+function FeaturesDialog({ user, onClose, onSaved }: { user: User; onClose: () => void; onSaved: () => void }) {
+  const [features, setFeatures] = useState<SiteFeature[]>(user.features)
+  const [busy, setBusy] = useState(false)
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Site access for {user.email}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          {FEATURES.map((f) => (
+            <Checkbox
+              key={f.key}
+              checked={features.includes(f.key)}
+              onChange={(on) => setFeatures((cur) => (on ? [...cur, f.key] : cur.filter((x) => x !== f.key)))}
+              label={f.label}
+              description={f.description}
+            />
+          ))}
+          {features.length === 0 && <p className="text-xs text-muted-foreground">With nothing ticked they can sign in but can&apos;t use the site.</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true)
+              try {
+                await api.setFeatures({ userId: user.id, features, roleVersion: user.roleVersion })
+                toast.success("Site access updated — it applies on their next page load")
+                onSaved()
+              } catch (err) {
+                if (err instanceof ApiError && err.code === "access_conflict") {
+                  toast.error("Their access changed meanwhile — reloaded, try again.")
+                  onSaved()
+                } else toast.error(errorMessage(err))
+              } finally {
+                setBusy(false)
+              }
+            }}
+          >
+            Save site access
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 function AccessDialog({ user, onClose, onSaved }: { user: User; onClose: () => void; onSaved: () => void }) {
   const [role, setRole] = useState<"user" | "admin">(user.role === "admin" ? "admin" : "user")
@@ -88,11 +146,15 @@ export function UsersAdmin() {
   const [applied, setApplied] = useState("")
   const [page, setPage] = useState(1)
   const [editing, setEditing] = useState<User | null>(null)
+  const [editingFeatures, setEditingFeatures] = useState<User | null>(null)
   const list = useLoad(() => api.list({ q: applied, page }), [applied, page])
 
   return (
     <>
-      <PageHeader title="Users & access" description="New staff sign in on the site once, then find them here and give them access." />
+      <PageHeader
+        title="Users & access"
+        description="Everyone signs in on the site once, then find them here: give visitors site access, give staff panel access."
+      />
       <form
         className="flex gap-2"
         onSubmit={(e) => {
@@ -121,6 +183,7 @@ export function UsersAdmin() {
                   <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Permissions</TableHead>
+                  <TableHead>Site access</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead />
                 </TableRow>
@@ -150,13 +213,35 @@ export function UsersAdmin() {
                         )}
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {u.role !== "user" ? (
+                          <span className="text-xs text-muted-foreground">everything (staff)</span>
+                        ) : u.features.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">none</span>
+                        ) : (
+                          FEATURES.filter((f) => u.features.includes(f.key)).map((f) => (
+                            <Badge key={f.key} variant="secondary">
+                              {f.label}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{formatDate(u.createdAt)}</TableCell>
                     <TableCell className="text-right">
-                      {u.role !== "superuser" && (
-                        <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
-                          Edit access
-                        </Button>
-                      )}
+                      <div className="flex justify-end gap-2">
+                        {u.role === "user" && (
+                          <Button size="sm" variant="outline" onClick={() => setEditingFeatures(u)}>
+                            Edit site access
+                          </Button>
+                        )}
+                        {u.role !== "superuser" && (
+                          <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
+                            Edit access
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -165,6 +250,16 @@ export function UsersAdmin() {
           </div>
           <Pager page={list.data.page} pages={list.data.pages} total={list.data.total} onPage={setPage} />
         </>
+      )}
+      {editingFeatures && (
+        <FeaturesDialog
+          user={editingFeatures}
+          onClose={() => setEditingFeatures(null)}
+          onSaved={() => {
+            setEditingFeatures(null)
+            list.reload()
+          }}
+        />
       )}
       {editing && (
         <AccessDialog

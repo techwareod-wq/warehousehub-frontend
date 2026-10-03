@@ -24,6 +24,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch {
     // The API being down must not break the sitemap: serve the static part.
+    // While the site is feature-gated the feed answers 401 (no visitor here),
+    // so only the static part is served.
   }
   return entries
 }
