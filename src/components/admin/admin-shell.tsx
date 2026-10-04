@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { UserButton } from "@clerk/nextjs"
-import { ArrowLeft, Menu, ShieldCheck } from "lucide-react"
+import { ArrowLeft, Menu, Monitor, Moon, ShieldCheck, Sun } from "lucide-react"
+import { ThemeProvider, useTheme } from "next-themes"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui"
 import { env } from "@/core/config/env"
 import { AccessProvider, type Access } from "@/features/access"
@@ -36,6 +37,45 @@ function NavLinks({ access, onNavigate }: { access: Access; onNavigate?: () => v
   )
 }
 
+const THEMES = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+] as const
+
+const noopSubscribe = () => () => {}
+
+/** Light / dark / system for the admin panel (the public site is always dark). */
+function ThemeSwitch() {
+  const { theme, setTheme } = useTheme()
+  // The stored theme is only known in the browser; render unselected on the server.
+  const mounted = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  )
+  return (
+    <div className="flex gap-0.5 self-start rounded-full bg-zinc-900 p-0.5" role="radiogroup" aria-label="Theme">
+      {THEMES.map((t) => {
+        const on = mounted && theme === t.value
+        return (
+          <button
+            key={t.value}
+            role="radio"
+            aria-checked={on}
+            aria-label={t.label}
+            title={t.label}
+            onClick={() => setTheme(t.value)}
+            className={cn("rounded-full p-1.5 transition-colors", on ? "bg-zinc-700 text-zinc-50" : "text-zinc-500 hover:text-zinc-200")}
+          >
+            <t.icon className="size-3.5" />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function Rail({ access, onNavigate }: { access: Access; onNavigate?: () => void }) {
   const roles = (["editor", "approver", "attributes"] as const).filter((p) => access.can[p])
   return (
@@ -57,9 +97,12 @@ function Rail({ access, onNavigate }: { access: Access; onNavigate?: () => void 
             </span>
           </div>
         </div>
-        <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200">
-          <ArrowLeft className="size-3.5" /> Public site
-        </Link>
+        <div className="flex items-center justify-between gap-2">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200">
+            <ArrowLeft className="size-3.5" /> Public site
+          </Link>
+          <ThemeSwitch />
+        </div>
       </div>
     </div>
   )
@@ -69,26 +112,28 @@ function Rail({ access, onNavigate }: { access: Access; onNavigate?: () => void 
 export function AdminShell({ access, children }: { access: Access; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   return (
-    <AccessProvider access={access}>
-      <div className="flex h-screen overflow-hidden">
-        <aside className="hidden w-60 shrink-0 md:block">
-          <Rail access={access} />
-        </aside>
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="left" className="w-64 p-0" showCloseButton={false}>
-            <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <Rail access={access} onNavigate={() => setOpen(false)} />
-          </SheetContent>
-        </Sheet>
-        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-          <div className="flex h-12 items-center border-b border-border px-3 md:hidden">
-            <button onClick={() => setOpen(true)} className="rounded-lg p-2 hover:bg-muted" aria-label="Open navigation">
-              <Menu className="size-5" />
-            </button>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <AccessProvider access={access}>
+        <div className="flex h-screen overflow-hidden">
+          <aside className="hidden w-60 shrink-0 md:block">
+            <Rail access={access} />
+          </aside>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetContent side="left" className="w-64 p-0" showCloseButton={false}>
+              <SheetTitle className="sr-only">Navigation</SheetTitle>
+              <Rail access={access} onNavigate={() => setOpen(false)} />
+            </SheetContent>
+          </Sheet>
+          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+            <div className="flex h-12 items-center border-b border-border px-3 md:hidden">
+              <button onClick={() => setOpen(true)} className="rounded-lg p-2 hover:bg-muted" aria-label="Open navigation">
+                <Menu className="size-5" />
+              </button>
+            </div>
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-8">{children}</div>
           </div>
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-8">{children}</div>
         </div>
-      </div>
-    </AccessProvider>
+      </AccessProvider>
+    </ThemeProvider>
   )
 }

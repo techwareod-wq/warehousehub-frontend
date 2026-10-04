@@ -7,7 +7,18 @@ import type {
   SearchFiltersNetwork,
   SearchResponseNetwork,
 } from "../network/search.network"
-import type { FilterCatalog, ListingCard, MapData, MinMax, Rate, SearchQuery, SearchResult, SortKey } from "../entities/search.entity"
+import type {
+  AdminListingCard,
+  AdminSearchResult,
+  FilterCatalog,
+  ListingCard,
+  MapData,
+  MinMax,
+  Rate,
+  SearchQuery,
+  SearchResult,
+  SortKey,
+} from "../entities/search.entity"
 
 const PINCODE = /^\d{6}$/
 
@@ -54,6 +65,7 @@ export function fromSearchQuery(q: SearchQuery, ctx: { country: string; currency
     if (r) ranges[k] = r
   }
   if (Object.keys(ranges).length) out.ranges = ranges
+  if (q.includeArchived) out.includeArchived = true
   if (q.sort) out.sort = q.sort
   return out
 }
@@ -78,6 +90,7 @@ export function toSearchQuery(f: SearchFiltersNetwork | undefined): SearchQuery 
     includeUnverified: !!f?.includeUnverified,
     chips: f?.chips ?? [],
     ranges,
+    includeArchived: !!f?.includeArchived,
     sort: (f?.sort as SortKey) || undefined,
     page: f?.page || 1,
   }
@@ -111,6 +124,21 @@ export function toListingCard(n: SearchCardNetwork): ListingCard {
   }
 }
 
+export function toAdminListingCard(n: SearchCardNetwork): AdminListingCard {
+  return {
+    ...toListingCard(n),
+    id: n.id ?? "",
+    status: n.status ?? "",
+    chips: n.chips ?? [],
+    nums: Object.fromEntries((n.nums ?? []).map((f) => [f.k, f.v])),
+    unk: n.unk ?? [],
+  }
+}
+
+export function toAdminSearchResult(n: SearchResponseNetwork): AdminSearchResult {
+  return { ...toSearchResult(n), results: (n.results ?? []).map(toAdminListingCard) }
+}
+
 export function toSearchResult(n: SearchResponseNetwork): SearchResult {
   const limit = n.limit || 1
   return {
@@ -129,8 +157,9 @@ export function toSearchResult(n: SearchResponseNetwork): SearchResult {
       chips: n.facets?.chips ?? {},
       industries: n.facets?.industries ?? {},
       ranges: n.facets?.ranges ?? {},
-      price: n.facets?.price ?? null,
-      area: n.facets?.area ?? null,
+      // Visitor units, like the query: ₹ per sq ft per month and sq ft.
+      price: n.facets?.price ? { min: perSqmMinorToPerSqft(n.facets.price.min), max: perSqmMinorToPerSqft(n.facets.price.max) } : null,
+      area: n.facets?.area ? { min: Math.floor(sqmToSqft(n.facets.area.min)), max: Math.ceil(sqmToSqft(n.facets.area.max)) } : null,
     },
     fallback:
       n.fallback && n.fallback.used
@@ -150,6 +179,22 @@ export function toFilterCatalog(n: PublicCatalogNetwork): FilterCatalog {
     radiusSteps: n.radiusSteps ?? [],
     chipRows: (n.chipRows ?? []).map((r) => ({ row: r.row, chips: r.chips ?? [] })),
     ranges: (n.ranges ?? []).map((r) => ({ key: r.key, label: r.label, type: r.type, unit: r.unit ?? "", row: r.row ?? "" })),
+    groups: (n.groups ?? []).map((g) => ({
+      key: g.key,
+      name: g.name,
+      parentName: g.parentName ?? "",
+      ancestors: g.ancestors ?? [],
+      selectable: g.selectable,
+      public: g.public,
+      fields: (g.fields ?? []).map((f) => ({
+        key: f.key,
+        name: f.name,
+        type: f.type,
+        unit: f.unit ?? "",
+        public: f.public,
+        options: f.options ?? [],
+      })),
+    })),
     industries: n.industries ?? [],
   }
 }
@@ -157,7 +202,14 @@ export function toFilterCatalog(n: PublicCatalogNetwork): FilterCatalog {
 export function toMapData(n: MapResponseNetwork): MapData {
   const bbox = n.bbox && n.bbox.length === 4 ? (n.bbox as [number, number, number, number]) : null
   return {
-    points: (n.points ?? []).map(([shortId, lat, lng, priceBand]) => ({ shortId, lat, lng, priceBand })),
+    points: (n.points ?? []).map(([shortId, lat, lng, priceBand], i) => ({
+      shortId,
+      lat,
+      lng,
+      priceBand,
+      id: n.adminPoints?.[i]?.id,
+      status: n.adminPoints?.[i]?.status,
+    })),
     bbox,
     total: n.total,
   }

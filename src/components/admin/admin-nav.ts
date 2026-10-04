@@ -7,6 +7,7 @@ import {
   Inbox,
   LayoutDashboard,
   ListTree,
+  Search,
   Users,
   Warehouse,
   type LucideIcon,
@@ -26,6 +27,7 @@ const any = () => true
 export const ADMIN_NAV: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard, visible: any },
   { label: "Warehouses", href: "/admin/warehouses", icon: Warehouse, visible: any },
+  { label: "Search", href: "/admin/search", icon: Search, visible: any },
   { label: "Review queue", href: "/admin/review", icon: ClipboardCheck, visible: any },
   { label: "Needs info", href: "/admin/needs-info", icon: HelpCircle, visible: any },
   { label: "Enquiries", href: "/admin/enquiries", icon: Inbox, visible: (c) => c.editor },

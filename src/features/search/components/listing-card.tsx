@@ -10,9 +10,9 @@ export function ListingCardView({ card, industryNames }: { card: ListingCard; in
   return (
     <Link
       href={`/warehouses/${card.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-shadow hover:shadow-md sm:flex-row"
+      className="glass group flex flex-col overflow-hidden rounded-2xl outline-offset-4 sm:flex-row"
     >
-      <div className="relative aspect-[16/10] w-full shrink-0 bg-muted sm:aspect-auto sm:h-auto sm:w-56">
+      <div className="relative aspect-[16/10] w-full shrink-0 bg-muted sm:aspect-auto sm:h-auto sm:w-60">
         {card.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={card.coverUrl} alt={card.name} className="absolute inset-0 size-full object-cover" loading="lazy" />
@@ -22,9 +22,9 @@ export function ListingCardView({ card, industryNames }: { card: ListingCard; in
           </div>
         )}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 p-5">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-heading text-base font-semibold leading-snug group-hover:underline">{card.name}</h3>
+          <h3 className="font-heading text-2xl leading-tight tracking-tight underline-offset-4 group-hover:underline">{card.name}</h3>
           {card.unverified && (
             <Badge variant="outline" className="shrink-0">
               <ShieldQuestion />
@@ -47,7 +47,7 @@ export function ListingCardView({ card, industryNames }: { card: ListingCard; in
             </span>
           )}
         </div>
-        <p className="text-sm font-medium">{formatRate(card.rate)}</p>
+        <p className="font-heading text-xl">{formatRate(card.rate)}</p>
         {card.industries.length > 0 && (
           <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
             {card.industries.slice(0, 5).map((i) => (

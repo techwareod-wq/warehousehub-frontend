@@ -45,7 +45,7 @@ function blankField(): AttributeField {
     ratio: null,
     validations: [],
     public: true,
-    filterable: false,
+    filterable: true,
     filterRow: "",
     filterPos: 0,
   }

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono, Inter } from "next/font/google"
+import { Geist_Mono, Inter, Newsreader } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
 import { cn } from "@/lib/utils"
@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { env } from "@/core/config/env"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
-const geistHeading = Geist({ subsets: ["latin"], variable: "--font-heading" })
+const newsreader = Newsreader({ subsets: ["latin"], variable: "--font-display", axes: ["opsz"] })
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={cn("h-full antialiased font-sans", inter.variable, geistHeading.variable, geistMono.variable)}>
+      <html lang="en" suppressHydrationWarning className={cn("h-full antialiased font-sans", inter.variable, newsreader.variable, geistMono.variable)}>
         <body className="flex min-h-full flex-col bg-background text-foreground">
           {children}
           <Toaster />

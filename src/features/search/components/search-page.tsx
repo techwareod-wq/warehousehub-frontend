@@ -4,15 +4,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, List, Map as MapIcon, MapPin, SlidersHorizontal, Sparkles } from "lucide-react"
-import { Button, Input, Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui"
+import { Button, Input, Sheet, SheetContent, SheetHeader, SheetTitle, Textarea } from "@/components/ui"
 import { EmptyState, ErrorState, LoadingRows, NativeSelect, Pager } from "@/components/common"
 import { mapsEnabled } from "@/components/maps/maps-provider"
 import { browserApi } from "@/core/api"
 import { env } from "@/core/config/env"
 import { getSessionId, rememberSearchId } from "@/core/session/visitor-session"
 import { useSiteFeature } from "@/features/users"
+import { cn } from "@/lib/utils"
 import { searchApi, type SearchContext } from "../api/search.api"
-import { SORT_OPTIONS, type FilterCatalog, type MapData, type SearchQuery, type SearchResult, type SortKey } from "../entities/search.entity"
+import {
+  SORT_OPTIONS,
+  type FilterCatalog,
+  type MapData,
+  type SearchQuery,
+  type SearchResult,
+  type SortKey,
+} from "../entities/search.entity"
 import { queryFromParams, queryToParams } from "../lib/query-params"
 import { FiltersPanel } from "./filters-panel"
 import { ListingCardView } from "./listing-card"
@@ -47,6 +55,8 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
   const [mapData, setMapData] = useState<MapData | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [place, setPlace] = useState(query.place)
+  const [describe, setDescribe] = useState(false)
+  const [text, setText] = useState("")
   const skipParams = useRef<string | null>(null)
 
   const ctx: SearchContext = useMemo(
@@ -112,42 +122,87 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
   }, [view, query, ctx])
 
   const industryNames = useMemo(() => Object.fromEntries((catalog?.industries ?? []).map((i) => [i.key, i.name])), [catalog])
-  const radiusOptions = (catalog?.radiusSteps ?? [25, 50, 100, 250]).map((r) => ({ value: String(r), label: `Within ${r} km` }))
   const filters = catalog ? <FiltersPanel catalog={catalog} query={query} result={result} onChange={navigate} /> : null
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8">
       <form
-        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        className="flex flex-col gap-2"
         onSubmit={(e) => {
           e.preventDefault()
+          if (describe && text.trim()) {
+            // One natural-language search; its parsed filters then replace `ai` in the URL.
+            const p = new URLSearchParams()
+            if (place.trim()) p.set("q", place.trim())
+            p.set("ai", text.trim())
+            router.push(`${pathname}?${p}`)
+            return
+          }
           navigate({ ...query, place, page: 1 })
         }}
       >
-        <div className="relative flex-1">
-          <MapPin className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="City, area or pincode" className="h-10 pl-9" />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {query.place && (
-            <NativeSelect
-              aria-label="Radius"
-              value={String(query.radiusKm ?? catalog?.defaultRadiusKm ?? 25)}
-              onChange={(v) => navigate({ ...query, radiusKm: Number(v), page: 1 })}
-              options={radiusOptions}
-            />
-          )}
-          <NativeSelect
-            aria-label="Sort"
-            value={query.sort ?? ""}
-            onChange={(v) => navigate({ ...query, sort: (v as SortKey) || undefined, page: 1 })}
-            placeholder="Sort: default"
-            options={SORT_OPTIONS.filter((o) => o.value !== "distance" || query.place)}
+        {aiEnabled && (
+          <div className="flex gap-1 self-start rounded-full bg-muted p-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setDescribe(false)}
+              className={cn(
+                "rounded-full px-3 py-1",
+                !describe ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              By location
+            </button>
+            <button
+              type="button"
+              onClick={() => setDescribe(true)}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-3 py-1",
+                describe ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Sparkles className="size-3.5" /> Describe it
+            </button>
+          </div>
+        )}
+        {describe && (
+          <Textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={2}
+            placeholder="e.g. 20,000 sq ft warehouse with cold storage and 2 loading docks, under ₹30 per sq ft"
+            className="resize-none rounded-2xl px-4 py-3"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                e.currentTarget.form?.requestSubmit()
+              }
+            }}
           />
-          <Button type="submit">Search</Button>
-          <Button type="button" variant="outline" className="lg:hidden" onClick={() => setFiltersOpen(true)}>
-            <SlidersHorizontal /> Filters
-          </Button>
+        )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <MapPin className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={place}
+              onChange={(e) => setPlace(e.target.value)}
+              placeholder="City, area or pincode"
+              className="h-10 rounded-full pl-10"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <NativeSelect
+              aria-label="Sort"
+              value={query.sort ?? ""}
+              onChange={(v) => navigate({ ...query, sort: (v as SortKey) || undefined, page: 1 })}
+              placeholder="Sort: default"
+              options={SORT_OPTIONS.filter((o) => o.value !== "distance" || query.place)}
+            />
+            <Button type="submit">Search</Button>
+            <Button type="button" variant="outline" className="lg:hidden" onClick={() => setFiltersOpen(true)}>
+              <SlidersHorizontal /> Filters
+            </Button>
+          </div>
         </div>
       </form>
 
@@ -164,20 +219,24 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
 
         <section className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm text-muted-foreground">
-              {loading ? "Searching…" : result ? `${result.total.toLocaleString()} warehouse${result.total === 1 ? "" : "s"}` : ""}
-              {result?.radius && !loading && ` within ${result.radius.usedKm} km`}
-            </p>
+            <h1 className="font-heading text-3xl tracking-tight sm:text-4xl">
+              {loading
+                ? "Searching…"
+                : result
+                  ? `${result.total.toLocaleString()} warehouse${result.total === 1 ? "" : "s"}`
+                  : "Warehouses"}
+              {result?.radius && !loading && <span className="text-muted-foreground"> within {result.radius.usedKm} km</span>}
+            </h1>
             {mapsEnabled && (
               <div className="flex gap-1 rounded-full bg-muted p-1 text-xs">
                 <button
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${view === "list" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${view === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={() => setView("list")}
                 >
                   <List className="size-3.5" /> List
                 </button>
                 <button
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${view === "map" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${view === "map" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={() => setView("map")}
                 >
                   <MapIcon className="size-3.5" /> Map
@@ -220,7 +279,7 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
               title="No warehouses match yet"
               body="Try a wider area or fewer filters — or tell us what you need and we'll find it for you."
               action={
-                <Link href="/enquire" className="text-sm font-medium text-primary hover:underline">
+                <Link href="/enquire" className="text-sm font-medium underline underline-offset-4 hover:no-underline">
                   Tell us what you need →
                 </Link>
               }
@@ -237,14 +296,18 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
           )}
 
           {result?.radius?.countryLink && (
-            <Button variant="outline" className="self-start" onClick={() => navigate({ ...query, place: "", radiusKm: undefined, page: 1 })}>
+            <Button
+              variant="outline"
+              className="self-start"
+              onClick={() => navigate({ ...query, place: "", radiusKm: undefined, page: 1 })}
+            >
               Search the whole country
             </Button>
           )}
 
           {result?.fallback && result.fallback.results.length > 0 && (
             <div className="flex flex-col gap-3 pt-4">
-              <h2 className="text-sm font-semibold">Similar warehouses you might like</h2>
+              <h2 className="font-heading text-2xl tracking-tight">Similar warehouses you might like</h2>
               {result.fallback.results.map((c) => (
                 <ListingCardView key={c.shortId} card={c} industryNames={industryNames} />
               ))}

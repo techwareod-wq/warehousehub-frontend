@@ -20,9 +20,9 @@ const MESSAGE_MIN = 10
  */
 export function EnquiryForm({ listingShortId, listingName }: { listingShortId?: string; listingName?: string }) {
   return (
-    <div className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5">
+    <div className="glass flex flex-col gap-4 rounded-3xl p-6">
       <div className="flex flex-col gap-1">
-        <h2 className="font-heading text-lg font-semibold">{listingName ? "Enquire about this warehouse" : "Tell us what you need"}</h2>
+        <h2 className="font-heading text-2xl tracking-tight">{listingName ? "Enquire about this warehouse" : "Tell us what you need"}</h2>
         <p className="text-xs text-muted-foreground">
           {listingName
             ? "Our team will get back to you with availability, pricing and a site visit."

@@ -3,7 +3,8 @@ import type { MinMax, SearchQuery, SortKey } from "../entities/search.entity"
 /**
  * SearchQuery ⇄ URL search params, so a search is linkable and the back
  * button works. Short keys: q, r, amin/amax (sq ft), pmin/pmax (₹/sq ft),
- * ind, chips, uv, sort, page, ai (natural-language text), rg.<path>=min~max.
+ * ind, chips, uv, arch (admin: include archived), sort, page, ai
+ * (natural-language text), rg.<path>=min~max.
  */
 function num(v: string | null): number | undefined {
   if (v === null || v.trim() === "") return undefined
@@ -31,6 +32,7 @@ export function queryFromParams(p: URLSearchParams): SearchQuery {
     includeUnverified: p.get("uv") === "1",
     chips: list(p.get("chips")),
     ranges,
+    includeArchived: p.get("arch") === "1",
     sort: (p.get("sort") as SortKey) || undefined,
     page: Math.max(1, num(p.get("page")) ?? 1),
   }
@@ -50,6 +52,7 @@ export function queryToParams(q: SearchQuery, extra: Record<string, string> = {}
   if (q.industries.length) p.set("ind", q.industries.join(","))
   if (q.includeUnverified) p.set("uv", "1")
   if (q.chips.length) p.set("chips", q.chips.join(","))
+  if (q.includeArchived) p.set("arch", "1")
   for (const [k, v] of Object.entries(q.ranges)) {
     if (v.min === undefined && v.max === undefined) continue
     p.set(`rg.${k}`, `${v.min ?? ""}~${v.max ?? ""}`)

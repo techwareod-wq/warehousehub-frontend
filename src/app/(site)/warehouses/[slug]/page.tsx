@@ -46,8 +46,7 @@ export default async function ListingPage({ params }: Props) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-12">
         <div className="flex flex-col gap-2">
-          <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">No longer available</p>
-          <h1 className="font-heading text-2xl font-semibold">This warehouse has been removed</h1>
+          <h1 className="font-heading text-4xl tracking-tight">This warehouse has been removed</h1>
           <p className="text-sm text-muted-foreground">It&apos;s no longer listed. Here are similar options nearby.</p>
         </div>
         <div className="flex flex-col gap-3">
@@ -62,7 +61,7 @@ export default async function ListingPage({ params }: Props) {
 
   const { listing } = res
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-8 lg:grid-cols-[1fr_380px]">
+    <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-10 lg:grid-cols-[1fr_380px]">
       {listing.seo.jsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(listing.seo.jsonLd).replace(/</g, "\\u003c") }} />
       )}

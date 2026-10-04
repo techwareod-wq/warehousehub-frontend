@@ -11,6 +11,8 @@ export interface SearchFiltersNetwork {
   includeUnverified?: boolean
   chips?: string[]
   ranges?: Record<string, { min?: number; max?: number }>
+  /** Admin search only: add archived warehouses. */
+  includeArchived?: boolean
   text?: string
   sessionId?: string
   sort?: string
@@ -40,6 +42,12 @@ export interface SearchCardNetwork {
   industries: string[] | null
   unverified: boolean
   coverUrl?: string
+  /** Admin search only (POST /v1/admin/search). */
+  id?: string
+  status?: string
+  chips?: string[] | null
+  nums?: { k: string; v: number }[] | null
+  unk?: string[] | null
 }
 
 export interface BoundsNetwork {
@@ -88,7 +96,27 @@ export interface AISearchRequestNetwork {
   sessionId?: string
 }
 
-/** GET /v1/public/catalog */
+/** crunch dto.FilterGroup: one attribute node and its filterable fields */
+export interface FilterGroupNetwork {
+  key: string
+  name: string
+  parentName?: string
+  ancestors: string[] | null
+  selectable: boolean
+  public: boolean
+  fields:
+    | {
+        key: string
+        name: string
+        type: string
+        unit?: string
+        public: boolean
+        options?: { key: string; label: string }[] | null
+      }[]
+    | null
+}
+
+/** GET /v1/public/catalog (and GET /v1/admin/search/catalog: every attribute) */
 export interface PublicCatalogNetwork {
   rulesVersion: number
   country: string
@@ -97,6 +125,7 @@ export interface PublicCatalogNetwork {
   radiusSteps: number[] | null
   chipRows: { row: string; chips: { key: string; label: string }[] | null }[] | null
   ranges: { key: string; label: string; type: string; unit?: string; row?: string }[] | null
+  groups: FilterGroupNetwork[] | null
   industries: { key: string; name: string }[] | null
 }
 
@@ -105,6 +134,8 @@ export interface MapResponseNetwork {
   points: [string, number, number, number][] | null
   bbox: number[] | null
   total: number
+  /** GET /v1/admin/search/map only: warehouse id + status, in points order. */
+  adminPoints?: { id: string; status: string }[] | null
 }
 
 /** GET /v1/public/geo/resolve */

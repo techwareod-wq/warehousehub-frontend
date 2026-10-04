@@ -1,36 +1,32 @@
 import Link from "next/link"
 import { Show, SignInButton, UserButton } from "@clerk/nextjs"
-import { Warehouse } from "lucide-react"
-import { Button } from "@/components/ui"
+import { auth } from "@clerk/nextjs/server"
+import { Button, buttonVariants } from "@/components/ui"
 import { env } from "@/core/config/env"
 import { hasSiteFeature } from "@/features/users/lib/server-access"
+import { SiteNav } from "./site-nav"
 
 export async function SiteHeader() {
-  const [canSearch, canEnquire] = await Promise.all([hasSiteFeature("search"), hasSiteFeature("enquiries")])
+  const [canSearch, canEnquire, { userId }] = await Promise.all([hasSiteFeature("search"), hasSiteFeature("enquiries"), auth()])
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4">
-        <Link href="/" className="flex items-center gap-2 font-heading text-base font-semibold tracking-tight">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Warehouse className="size-4" />
-          </span>
+    <header className="sticky top-0 z-40 bg-background/85 backdrop-blur">
+      <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 md:grid-cols-[1fr_auto_1fr]">
+        <Link href="/" className="font-heading text-2xl tracking-tight">
           {env.siteName}
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
+        <SiteNav canSearch={canSearch} canEnquire={canEnquire} signedIn={!!userId} />
+        <div className="flex items-center justify-end gap-3">
           {canSearch && (
-            <Link href="/search" className="rounded-full px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+            <Link href="/search" className={buttonVariants({ size: "sm", className: "md:hidden" })}>
               Search
             </Link>
           )}
           {canEnquire && (
-            <Link href="/enquire" className="hidden rounded-full px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground sm:inline">
-              Get help finding space
+            <Link href="/enquire" className={buttonVariants({ size: "sm", className: "hidden md:inline-flex" })}>
+              Tell us what you need
             </Link>
           )}
           <Show when="signed-in">
-            <Link href="/account" className="rounded-full px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-              Account
-            </Link>
             <UserButton />
           </Show>
           <Show when="signed-out">
@@ -40,7 +36,7 @@ export async function SiteHeader() {
               </Button>
             </SignInButton>
           </Show>
-        </nav>
+        </div>
       </div>
     </header>
   )

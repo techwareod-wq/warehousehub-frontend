@@ -6,14 +6,19 @@ import { formatAreaSqft } from "@/lib/format"
 import { formatRate } from "@/features/search"
 import type { Listing, PublicNode } from "../entities/listings.entity"
 
-const DOC_LABELS: Record<string, string> = { floor_plan: "Floor plan", agreement: "Agreement", certificate: "Certificate", other: "Document" }
+const DOC_LABELS: Record<string, string> = {
+  floor_plan: "Floor plan",
+  agreement: "Agreement",
+  certificate: "Certificate",
+  other: "Document",
+}
 
 function NodeSection({ node, depth = 0 }: { node: PublicNode; depth?: number }) {
   return (
     <div className={depth > 0 ? "border-l border-border pl-4" : ""}>
       {depth > 0 && (
         <p className="flex items-center gap-1.5 text-sm font-medium">
-          <Check className="size-4 text-green-600" />
+          <Check className="size-4 text-green-400" />
           {node.name}
         </p>
       )}
@@ -63,8 +68,8 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
         </div>
       )}
 
-      <header className="flex flex-col gap-2">
-        <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">{listing.name}</h1>
+      <header className="flex flex-col gap-3">
+        <h1 className="font-heading text-4xl leading-tight tracking-tight sm:text-5xl">{listing.name}</h1>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
           {place && (
             <span className="inline-flex items-center gap-1.5">
@@ -80,7 +85,7 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
             </span>
           )}
         </div>
-        <p className="text-lg font-semibold">{formatRate(listing.rate)}</p>
+        <p className="font-heading text-2xl">{formatRate(listing.rate)}</p>
         {listing.industries.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {listing.industries.map((i) => (
@@ -94,8 +99,8 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
 
       {listing.description && <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line">{listing.description}</p>}
 
-      <section className="flex flex-col gap-3">
-        <h2 className="font-heading text-base font-semibold">Facilities & specifications</h2>
+      <section className="glass flex flex-col gap-4 rounded-3xl p-6 sm:p-8">
+        <h2 className="font-heading text-3xl tracking-tight">Facilities & specifications</h2>
         {rootFields && rootFields.fields.length > 0 && <NodeSection node={{ ...rootFields, children: [] }} />}
         <div className="flex flex-col gap-4">
           {(root?.children ?? []).map((c) => (
@@ -106,11 +111,16 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
 
       {listing.docs.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="font-heading text-base font-semibold">Documents</h2>
+          <h2 className="font-heading text-2xl tracking-tight">Documents</h2>
           <ul className="flex flex-col gap-1.5 text-sm">
             {listing.docs.map((d) => (
               <li key={d.url}>
-                <a href={d.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-primary hover:underline">
+                <a
+                  href={d.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 underline underline-offset-4 hover:no-underline"
+                >
                   <FileText className="size-4" />
                   {d.caption || DOC_LABELS[d.docType] || "Document"}
                 </a>
@@ -122,13 +132,13 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
 
       {listing.point && (
         <section className="flex flex-col gap-2">
-          <h2 className="font-heading text-base font-semibold">Location</h2>
+          <h2 className="font-heading text-2xl tracking-tight">Location</h2>
           <StaticPin point={listing.point} />
           <p className="text-xs text-muted-foreground">The pin shows the approximate location. The exact address is shared on enquiry.</p>
         </section>
       )}
 
-      <Link href="/search" className="text-sm text-primary hover:underline">
+      <Link href="/search" className="text-sm text-muted-foreground hover:text-foreground">
         ← Back to search
       </Link>
     </article>

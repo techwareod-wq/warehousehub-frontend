@@ -6,8 +6,8 @@ import type {
   PublicCatalogNetwork,
   SearchResponseNetwork,
 } from "../network/search.network"
-import { fromSearchQuery, toFilterCatalog, toLocation, toMapData, toSearchResult } from "../mappers/search.mapper"
-import type { FilterCatalog, MapData, SearchQuery, SearchResult } from "../entities/search.entity"
+import { fromSearchQuery, toAdminSearchResult, toFilterCatalog, toLocation, toMapData, toSearchResult } from "../mappers/search.mapper"
+import type { AdminSearchResult, FilterCatalog, MapData, SearchQuery, SearchResult } from "../entities/search.entity"
 
 export interface SearchContext {
   country: string
@@ -48,6 +48,28 @@ export function searchApi(client: HttpClient) {
 
     async resolve(q: string, country: string): Promise<GeoResolvedNetwork> {
       return client.get<GeoResolvedNetwork>("/v1/public/geo/resolve", { q, country })
+    },
+  }
+}
+
+/**
+ * Staff search (/v1/admin/search*): every attribute is filterable (staff-only
+ * and non-filterable ones too), archived listings on request.
+ */
+export function adminSearchApi(client: HttpClient) {
+  return {
+    async catalog(country: string): Promise<FilterCatalog> {
+      return toFilterCatalog(await client.get<PublicCatalogNetwork>("/v1/admin/search/catalog", { country }))
+    },
+
+    async search(q: SearchQuery, country: string, currency: string, signal?: AbortSignal): Promise<AdminSearchResult> {
+      const body = fromSearchQuery(q, { country, currency, sessionId: "" })
+      return toAdminSearchResult(await client.post<SearchResponseNetwork>("/v1/admin/search", body, { signal }))
+    },
+
+    async map(q: SearchQuery, country: string, currency: string): Promise<MapData> {
+      const filters = fromSearchQuery({ ...q, page: 1 }, { country, currency, sessionId: "" })
+      return toMapData(await client.get<MapResponseNetwork>("/v1/admin/search/map", { country, filters: JSON.stringify(filters) }))
     },
   }
 }

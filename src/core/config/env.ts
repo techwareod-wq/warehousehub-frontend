@@ -7,7 +7,7 @@ export const env = {
   /** Public site origin, e.g. https://warehousehub.in (canonical URLs, sitemap). */
   siteUrl: (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, ""),
   /** Brand name shown in the header, titles and emails. */
-  siteName: process.env.NEXT_PUBLIC_SITE_NAME ?? "WarehouseHub",
+  siteName: process.env.NEXT_PUBLIC_SITE_NAME ?? "WareOD",
   /** Google Maps JS key. Empty = maps are hidden and pins are typed as lat/lng. */
   googleMapsKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
   /** Public media CDN origin (the backend's PUBLIC_MEDIA_BASE_URL) for admin thumbnails. */
