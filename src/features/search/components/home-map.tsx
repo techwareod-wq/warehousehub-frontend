@@ -31,13 +31,11 @@ export function HomeMap({ catalog }: { catalog: FilterCatalog | null }) {
   if (!mapsEnabled) return null
   return (
     <div className="relative">
-      {/* The blue horizon glow behind the map. */}
-      <div aria-hidden className="absolute inset-x-10 -top-10 bottom-10 rounded-full bg-primary/25 blur-3xl" />
-      <div className="relative">
+      <div className="relative overflow-hidden rounded-xl">
         <ResultsMap data={data} legend={false} gestureHandling="cooperative" className="h-[460px] sm:h-[520px]" />
       </div>
       {data && data.total > 0 && (
-        <p className="mt-4 text-center text-sm text-muted-foreground">
+        <p className="mt-3 mb-1 text-center text-xs tracking-wider text-muted-foreground uppercase">
           {data.total.toLocaleString()} warehouse{data.total === 1 ? "" : "s"} listed. Click a pin to open it.
         </p>
       )}

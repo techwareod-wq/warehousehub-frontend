@@ -8,6 +8,7 @@ import { FormRow } from "@/components/common"
 import { ApiError, browserApi, errorMessage } from "@/core/api"
 import { getSessionId, lastSearchId, newIdempotencyKey } from "@/core/session/visitor-session"
 import { profileApi } from "@/features/users"
+import { cn } from "@/lib/utils"
 import { enquirySubmitApi } from "../api/enquiries.api"
 
 const MESSAGE_MIN = 10
@@ -18,9 +19,18 @@ const MESSAGE_MIN = 10
  * profile and saved back by the backend. The last search's id and the
  * anonymous session go along so the enquiry converts that search.
  */
-export function EnquiryForm({ listingShortId, listingName }: { listingShortId?: string; listingName?: string }) {
+export function EnquiryForm({
+  listingShortId,
+  listingName,
+  className,
+}: {
+  listingShortId?: string
+  listingName?: string
+  /** Replaces the default glass panel styling (layout classes stay). */
+  className?: string
+}) {
   return (
-    <div className="glass flex flex-col gap-4 rounded-3xl p-6">
+    <div className={cn("flex flex-col gap-4", className ?? "glass rounded-3xl p-6")}>
       <div className="flex flex-col gap-1">
         <h2 className="font-heading text-2xl tracking-tight">{listingName ? "Enquire about this warehouse" : "Tell us what you need"}</h2>
         <p className="text-xs text-muted-foreground">

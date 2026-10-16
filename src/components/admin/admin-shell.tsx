@@ -7,7 +7,7 @@ import { UserButton } from "@clerk/nextjs"
 import { ArrowLeft, Menu, Monitor, Moon, ShieldCheck, Sun } from "lucide-react"
 import { ThemeProvider, useTheme } from "next-themes"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui"
-import { env } from "@/core/config/env"
+import { BRAND } from "@/core/config/brand"
 import { AccessProvider, type Access } from "@/features/access"
 import { cn } from "@/lib/utils"
 import { ADMIN_NAV } from "./admin-nav"
@@ -82,7 +82,7 @@ function Rail({ access, onNavigate }: { access: Access; onNavigate?: () => void 
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-300">
       <div className="flex h-14 items-center gap-2 border-b border-zinc-800 px-4">
         <ShieldCheck className="size-4 text-primary" />
-        <span className="text-sm font-semibold text-zinc-100">{env.siteName} admin</span>
+        <span className="text-sm font-semibold text-zinc-100">{BRAND} admin</span>
       </div>
       <div className="flex-1 overflow-y-auto">
         <NavLinks access={access} onNavigate={onNavigate} />

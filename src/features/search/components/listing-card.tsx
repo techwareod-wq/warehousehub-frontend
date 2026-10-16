@@ -24,7 +24,7 @@ export function ListingCardView({ card, industryNames }: { card: ListingCard; in
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2 p-5">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-heading text-2xl leading-tight tracking-tight underline-offset-4 group-hover:underline">{card.name}</h3>
+          <h3 className="font-heading text-xl leading-tight font-bold tracking-tight underline-offset-4 group-hover:underline sm:text-2xl">{card.name}</h3>
           {card.unverified && (
             <Badge variant="outline" className="shrink-0">
               <ShieldQuestion />
@@ -47,7 +47,7 @@ export function ListingCardView({ card, industryNames }: { card: ListingCard; in
             </span>
           )}
         </div>
-        <p className="font-heading text-xl">{formatRate(card.rate)}</p>
+        <p className="font-heading text-lg font-semibold text-site-cyan">{formatRate(card.rate)}</p>
         {card.industries.length > 0 && (
           <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
             {card.industries.slice(0, 5).map((i) => (

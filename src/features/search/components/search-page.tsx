@@ -219,7 +219,7 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
 
         <section className="flex min-w-0 flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h1 className="font-heading text-3xl tracking-tight sm:text-4xl">
+            <h1 className="font-heading text-3xl font-bold tracking-tight uppercase sm:text-4xl">
               {loading
                 ? "Searching…"
                 : result

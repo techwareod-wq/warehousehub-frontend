@@ -49,6 +49,41 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* Public-site palette (defined under .site below). */
+  --color-site-ink: var(--site-ink);
+  --color-site-deep: var(--site-deep);
+  --color-site-panel: var(--site-panel);
+  --color-site-nav: var(--site-nav);
+  --color-site-footer: var(--site-footer);
+  --color-site-blue: var(--site-blue);
+  --color-site-cyan: var(--site-cyan);
+  --color-site-green: var(--site-green);
+  --color-site-amber: var(--site-amber);
+  --color-site-teal: var(--site-teal);
+  --color-site-teal-soft: var(--site-teal-soft);
+  --color-site-teal-deep: var(--site-teal-deep);
+  --color-site-band-from: var(--site-band-from);
+  --color-site-band-to: var(--site-band-to);
+  --animate-ken-burns: ken-burns 28s ease-in-out infinite alternate;
+  --animate-drift: drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes ken-burns {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.12) translate3d(-2%, -1.5%, 0);
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-3%, 0, 0);
+  }
+  to {
+    transform: translate3d(3%, -2%, 0);
+  }
 }
 
 :root {
@@ -128,6 +163,63 @@ html:has(.dark) {
   --sidebar-accent-foreground: #eef1f5;
   --sidebar-border: rgb(238 241 245 / 11%);
   --sidebar-ring: #5b8deb;
+}
+
+/* Public site: deep harbour navy with a dock-blue accent and teal bands.
+   Scoped to .site (the (site) layout) so the admin theme is untouched; the
+   html:has() arm reaches portals (dialogs, popovers) opened from the site. */
+.site,
+html:has(.site) {
+  --background: #0b1f2a;
+  --foreground: #f3f7fa;
+  --card: #112431;
+  --card-foreground: #f3f7fa;
+  --popover: #0f2230;
+  --popover-foreground: #f3f7fa;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #17303f;
+  --secondary-foreground: #f3f7fa;
+  --muted: #142a38;
+  --muted-foreground: #a8b8c5;
+  --accent: #17303f;
+  --accent-foreground: #f3f7fa;
+  --border: rgb(255 255 255 / 11%);
+  --input: rgb(255 255 255 / 18%);
+  --ring: #60a5fa;
+  --radius: 0.75rem;
+  --font-display: var(--font-outfit);
+
+  --site-ink: #07131d;
+  --site-deep: #0b1f2a;
+  --site-panel: #112431;
+  --site-nav: #06101a;
+  --site-footer: #0a0c10;
+  --site-blue: #3b82f6;
+  --site-cyan: #22d3ee;
+  --site-green: #22c55e;
+  --site-amber: #eab308;
+  --site-teal: #7bc0cd;
+  --site-teal-soft: #80c8d4;
+  --site-teal-deep: #458092;
+  --site-band-from: #70b1be;
+  --site-band-to: #3a6d7f;
+}
+
+.site {
+  font-family: var(--font-jakarta), var(--font-sans), sans-serif;
+}
+
+/* Motion is decoration only: switch it all off for reduced-motion visitors. */
+@media (prefers-reduced-motion: reduce) {
+  .site *,
+  .site *::before,
+  .site *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Glass: the frosted panel on the dark site (result cards, specs, the
