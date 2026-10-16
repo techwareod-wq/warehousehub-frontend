@@ -19,7 +19,7 @@ import { NativeSelect } from "@/components/common"
 import { browserApi, errorMessage } from "@/core/api"
 import { env } from "@/core/config/env"
 import { formatRate, type FilterCatalog } from "@/features/search"
-import { ExplorePanel, exploreFiltersEnabled, toExploreMarkers, type FinderWarehouse } from "@/features/explore-finder" // EXPLORE-FILTERS (remove to uninstall)
+import { ExplorePanel, exploreFiltersEnabled, finderPadding, safeFit, toExploreMarkers, type FinderWarehouse } from "@/features/explore-finder" // EXPLORE-FILTERS (remove to uninstall)
 import { formatAreaSqft } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { exploreApi } from "../api/explore.api"
@@ -174,7 +174,7 @@ function globeView(el: HTMLElement) {
 
 /** Keeps markers clear of the listing panel (side panel on desktop, bottom sheet on mobile). */
 function panelPadding(container: HTMLElement | null, panel: HTMLElement | null): Padding {
-  if (exploreFiltersEnabled && isMobile()) return { top: 110, right: 20, bottom: 40, left: 20 } // EXPLORE-FILTERS (remove to uninstall): mobile list/map toggle, no bottom sheet
+  if (exploreFiltersEnabled) return finderPadding(container, panel) // EXPLORE-FILTERS (remove to uninstall): measured panel overlap, clamped to the canvas
   if (isMobile()) return { top: 40, right: 20, left: 20, bottom: Math.round((container?.clientHeight ?? 600) * 0.52) + 20 }
   return { top: 40, right: 40, bottom: 40, left: (panel?.offsetWidth ?? 0) + 48 }
 }
@@ -473,11 +473,22 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
   function fitTo(list: ExploreWarehouse[]) {
     const map = mapRef.current
     if (!map || !list.length) return
+    // EXPLORE-FILTERS (remove to uninstall): the new layout fits through safeFit (clamped padding, never throws).
+    if (exploreFiltersEnabled) {
+      return safeFit(map, list, finderPadding(containerRef.current, panelRef.current), { maxZoom: 10, duration: reducedMotion() ? 0 : 1600 }, PROGRAMMATIC)
+    }
+    // EXPLORE-FILTERS (remove to uninstall): guard the old fit too: skip a zero-size canvas, never crash on a failed fit.
+    const box = map.getContainer() // EXPLORE-FILTERS (remove to uninstall)
+    if (!box.clientWidth || !box.clientHeight) return // EXPLORE-FILTERS (remove to uninstall)
+    try {
     map.fitBounds(
       boundsOf(list),
       { padding: panelPadding(containerRef.current, panelRef.current), maxZoom: 10, duration: reducedMotion() ? 0 : 1600, essential: true },
       PROGRAMMATIC,
     )
+    } catch (err) { // EXPLORE-FILTERS (remove to uninstall)
+      console.error("[explore map] fitBounds failed", err) // EXPLORE-FILTERS (remove to uninstall)
+    } // EXPLORE-FILTERS (remove to uninstall)
   }
 
   function enterMap(fly = true) {
@@ -678,13 +689,17 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
 
   // EXPLORE-FILTERS (remove to uninstall): frame the finder's results when the searched place
   // changes (first load = every warehouse); other filter changes leave the camera alone.
+  // Resize first (the canvas may just have been shown), then fit on the next frame.
   const fitFinder = useEffectEvent(() => {
-    if (finderResultPlace === null || finderResultPlace === finderFitPlace.current || !finderMarkers.length) return
-    finderFitPlace.current = finderResultPlace
-    fitTo(finderMarkers)
+    const place = finderResultPlace
+    if (place === null || place === finderFitPlace.current || !finderMarkers.length) return
+    mapRef.current?.resize()
+    if (fitTo(finderMarkers)) finderFitPlace.current = place
   })
   useEffect(() => {
-    if (mapReady && finderOn) fitFinder()
+    if (!mapReady || !finderOn) return
+    const frame = requestAnimationFrame(() => fitFinder())
+    return () => cancelAnimationFrame(frame)
   }, [mapReady, finderOn, finderMarkers])
 
   useEffect(() => {
