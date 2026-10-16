@@ -9,6 +9,7 @@ export function SiteNav({ canSearch, canEnquire, signedIn }: { canSearch: boolea
   const pathname = usePathname()
   const tabs = [
     { href: "/search", label: "Search", show: canSearch },
+    { href: "/explore", label: "Explore", show: canSearch },
     { href: "/#how-it-works", label: "How it works", show: true },
     { href: "/#industries", label: "Industries", show: true },
     { href: "/enquire", label: "Get help finding space", show: canEnquire },
