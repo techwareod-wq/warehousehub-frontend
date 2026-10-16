@@ -1,7 +1,7 @@
 "use client"
 
 import "maplibre-gl/dist/maplibre-gl.css"
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react" // EXPLORE-FILTERS (remove to uninstall): + useCallback
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import type {
@@ -19,6 +19,7 @@ import { NativeSelect } from "@/components/common"
 import { browserApi, errorMessage } from "@/core/api"
 import { env } from "@/core/config/env"
 import { formatRate, type FilterCatalog } from "@/features/search"
+import { ExplorePanel, exploreFiltersEnabled, toExploreMarkers, type FinderWarehouse } from "@/features/explore-finder" // EXPLORE-FILTERS (remove to uninstall)
 import { formatAreaSqft } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { exploreApi } from "../api/explore.api"
@@ -173,6 +174,7 @@ function globeView(el: HTMLElement) {
 
 /** Keeps markers clear of the listing panel (side panel on desktop, bottom sheet on mobile). */
 function panelPadding(container: HTMLElement | null, panel: HTMLElement | null): Padding {
+  if (exploreFiltersEnabled && isMobile()) return { top: 110, right: 20, bottom: 40, left: 20 } // EXPLORE-FILTERS (remove to uninstall): mobile list/map toggle, no bottom sheet
   if (isMobile()) return { top: 40, right: 20, left: 20, bottom: Math.round((container?.clientHeight ?? 600) * 0.52) + 20 }
   return { top: 40, right: 40, bottom: 40, left: (panel?.offsetWidth ?? 0) + 48 }
 }
@@ -442,6 +444,24 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
   const popupWarehouse = useMemo(() => filtered.find((w) => w.shortId === popupId) ?? null, [filtered, popupId])
   const cities = baseline?.cities ?? []
 
+  // EXPLORE-FILTERS (remove to uninstall): the finder overlay's state. In map mode its
+  // results replace the old data on the map; the globe keeps showing every listing.
+  const [finderPlace, setFinderPlace] = useState({ city: "", n: 0 })
+  const [finderResults, setFinderResults] = useState<FinderWarehouse[]>([])
+  const [finderSelected, setFinderSelected] = useState<{ id: string; n: number } | null>(null)
+  const [finderMapView, setFinderMapView] = useState(false)
+  const [finderResultPlace, setFinderResultPlace] = useState<string | null>(null)
+  /** The place the map was last framed for; the map refits only when the searched place changes. */
+  const finderFitPlace = useRef<string | null>(null)
+  const finderMarkers = useMemo(() => toExploreMarkers(finderResults), [finderResults])
+  const finderOn = exploreFiltersEnabled && mode === "map"
+  const markers = finderOn ? finderMarkers : filtered
+  const highlightId = hoverId ?? (finderOn ? finderSelected?.id : null) ?? ""
+  const onFinderResults = useCallback((list: FinderWarehouse[], place: string) => {
+    setFinderResults(list)
+    setFinderResultPlace(place)
+  }, [])
+
   // ---------- Camera ----------
   function moveTo(opts: { center: LngLatLike; zoom: number; padding?: Padding; bearing?: number; pitch?: number }) {
     const map = mapRef.current
@@ -505,7 +525,27 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
       return
     }
     setHeroMiss("")
+    if (exploreFiltersEnabled) return pickFinderPlace(match) // EXPLORE-FILTERS (remove to uninstall)
     chooseCity(match)
+  }
+
+  // EXPLORE-FILTERS (remove to uninstall): a hero search or globe pin opens the finder on that city.
+  function pickFinderPlace(c: string) {
+    setFinderPlace((p) => ({ city: c, n: p.n + 1 }))
+    setFinderSelected(null)
+    setFinderMapView(false)
+    enterMap()
+  }
+
+  // EXPLORE-FILTERS (remove to uninstall): a card click highlights its pin and flies there
+  // (past the cluster zoom, so the pin stands on its own).
+  function selectFinderCard(id: string) {
+    setFinderSelected((s) => ({ id, n: (s?.n ?? 0) + 1 }))
+    const w = finderMarkers.find((x) => x.shortId === id)
+    const map = mapRef.current
+    if (!w || !map) return
+    moveTo({ center: [w.lng, w.lat], zoom: Math.max(map.getZoom(), 15), padding: panelPadding(containerRef.current, panelRef.current) })
+    if (isMobile()) setFinderMapView(true)
   }
 
   // ---------- Map listeners (always see the latest state) ----------
@@ -525,6 +565,17 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     moveTo({ center, zoom: Math.max(zoom, map.getZoom() + 1), padding: panelPadding(containerRef.current, panelRef.current) })
   })
   const onPointClick = useEffectEvent((id: string) => {
+    // EXPLORE-FILTERS (remove to uninstall): map pins select their card; globe pins open the finder on their city.
+    if (exploreFiltersEnabled) {
+      if (modeRef.current === "map") {
+        setFinderSelected((s) => ({ id, n: (s?.n ?? 0) + 1 }))
+        setFinderMapView(false)
+      } else {
+        const g = filtered.find((x) => x.shortId === id)
+        if (g?.city) pickFinderPlace(g.city)
+      }
+      return
+    }
     const w = filtered.find((x) => x.shortId === id)
     if (!w) return
     if (modeRef.current === "globe") openWarehouse(w)
@@ -539,8 +590,8 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
   /** After a fallback restyle the warehouse layers are new and empty: refill them. */
   const onRestyled = useEffectEvent(() => {
     const map = mapRef.current
-    map?.getSource<GeoJSONSource>(SOURCE)?.setData(toGeoJSON(filtered))
-    map?.setFilter("point-highlight", ["all", UNCLUSTERED, ["==", ["get", "id"], hoverId ?? ""]])
+    map?.getSource<GeoJSONSource>(SOURCE)?.setData(toGeoJSON(markers)) // EXPLORE-FILTERS (remove to uninstall): was `filtered`
+    map?.setFilter("point-highlight", ["all", UNCLUSTERED, ["==", ["get", "id"], highlightId]]) // EXPLORE-FILTERS (remove to uninstall): was `hoverId ?? ""`
   })
 
   // ---------- Map lifecycle: one map per mount, fully torn down (safe under StrictMode) ----------
@@ -622,13 +673,24 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
 
   useEffect(() => {
     if (!mapReady) return
-    mapRef.current?.getSource<GeoJSONSource>(SOURCE)?.setData(toGeoJSON(filtered))
-  }, [mapReady, filtered])
+    mapRef.current?.getSource<GeoJSONSource>(SOURCE)?.setData(toGeoJSON(markers)) // EXPLORE-FILTERS (remove to uninstall): was `filtered`
+  }, [mapReady, markers]) // EXPLORE-FILTERS (remove to uninstall): was `filtered`
+
+  // EXPLORE-FILTERS (remove to uninstall): frame the finder's results when the searched place
+  // changes (first load = every warehouse); other filter changes leave the camera alone.
+  const fitFinder = useEffectEvent(() => {
+    if (finderResultPlace === null || finderResultPlace === finderFitPlace.current || !finderMarkers.length) return
+    finderFitPlace.current = finderResultPlace
+    fitTo(finderMarkers)
+  })
+  useEffect(() => {
+    if (mapReady && finderOn) fitFinder()
+  }, [mapReady, finderOn, finderMarkers])
 
   useEffect(() => {
     if (!mapReady) return
-    mapRef.current?.setFilter("point-highlight", ["all", UNCLUSTERED, ["==", ["get", "id"], hoverId ?? ""]])
-  }, [mapReady, hoverId])
+    mapRef.current?.setFilter("point-highlight", ["all", UNCLUSTERED, ["==", ["get", "id"], highlightId]]) // EXPLORE-FILTERS (remove to uninstall): was `hoverId ?? ""`
+  }, [mapReady, highlightId]) // EXPLORE-FILTERS (remove to uninstall): was `hoverId`
 
   useEffect(() => {
     const map = mapRef.current
@@ -749,6 +811,23 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
         </div>
       </section>
 
+      {/* EXPLORE-FILTERS (remove to uninstall): the finder overlay replaces the listing panel when the flag is on. */}
+      {exploreFiltersEnabled ? (
+        <ExplorePanel
+          active={mode === "map"}
+          panelRef={panelRef}
+          placeRequest={finderPlace}
+          hoverId={hoverId}
+          onHover={setHoverId}
+          selected={finderSelected}
+          onSelectCard={selectFinderCard}
+          mapView={finderMapView}
+          onMapView={setFinderMapView}
+          onResults={onFinderResults}
+          onBack={enterGlobe}
+        />
+      ) : (
+      <>
       {/* Listing panel (map mode): side panel on desktop, bottom sheet on mobile */}
       <aside
         ref={panelRef}
@@ -864,6 +943,8 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
           ))}
         </ul>
       </aside>
+      </>
+      )}
 
       {popupEl && popupWarehouse && createPortal(<PopupCard w={popupWarehouse} />, popupEl)}
     </div>

@@ -38,6 +38,7 @@ export function SiteNav({
   const tabs = [
     { href: "/search", label: "Warehouses", show: canSearch },
     { href: "/explore", label: "Explore", show: canSearch },
+    { href: "/find", label: "Finder", show: canSearch && process.env.NEXT_PUBLIC_ENABLE_FINDER === "true" }, // FINDER (remove to uninstall)
     { href: "/nexus", label: "Nexus Engine", show: true },
     { href: "/enquire", label: "Contact", show: canEnquire },
     { href: "/account", label: "Account", show: signedIn },
