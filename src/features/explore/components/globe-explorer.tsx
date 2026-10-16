@@ -11,8 +11,9 @@ import type {
   LngLatLike,
   Map as MapLibreMap,
   PaddingOptions,
+  StyleSpecification,
 } from "maplibre-gl"
-import { ArrowRight, ChevronDown, Globe, MapPin, Ruler, Warehouse } from "lucide-react"
+import { ArrowRight, Check, ChevronDown, Globe, MapPin, Ruler, Warehouse } from "lucide-react"
 import { Button, Input } from "@/components/ui"
 import { NativeSelect } from "@/components/common"
 import { browserApi, errorMessage } from "@/core/api"
@@ -29,7 +30,10 @@ type Padding = PaddingOptions
 
 const api = exploreApi(browserApi)
 
-const STYLE_URL = "https://tiles.openfreemap.org/styles/bright"
+const OFM = "https://tiles.openfreemap.org"
+/** Used (recoloured dark) only if NASA GIBS can't serve a single tile. */
+const FALLBACK_STYLE_URL = `${OFM}/styles/bright`
+const BLUE_MARBLE = "blue-marble"
 const INDIA: [number, number] = [78.96, 20.59]
 const MAP_VIEW = { center: [78.96, 22] as [number, number], zoom: 4.8 }
 const FLY = { speed: 0.8, curve: 1.6 }
@@ -38,9 +42,11 @@ const ENTER_MAP_ZOOM = 4
 /** The globe flattens into Mercator between these zooms; basemap labels show from FLAT_FROM. */
 const FLAT_FROM = 3.5
 const FLAT_TO = 5.2
-const ROTATE_DEG_PER_SEC = 3
-const GOLD = "#f5b301"
-const SPACE = "#05080f"
+const GOLD = "#F5B82E"
+const SPACE = "#05070d"
+const LAND = "#1a1d24"
+const BORDER = "#3a3f4a"
+const LABEL = "#aeb4bf"
 const SOURCE = "warehouses"
 const MOBILE = "(max-width: 767px)"
 /** Marks our own camera moves so the zoom listener can tell them from gestures. */
@@ -48,6 +54,105 @@ const PROGRAMMATIC = { programmatic: true }
 // Cluster bubble radius grows with its count.
 const CLUSTER_RADIUS: ExpressionSpecification = ["interpolate", ["linear"], ["get", "point_count"], 2, 14, 10, 18, 40, 24, 150, 32]
 const UNCLUSTERED: ExpressionSpecification = ["!", ["has", "point_count"]]
+const PLACE_NAME: ExpressionSpecification = ["coalesce", ["get", "name:latin"], ["get", "name"]]
+
+/** Dark basemap: grayscale NASA Blue Marble relief with dim OpenFreeMap borders and labels on top. */
+const DARK_STYLE: StyleSpecification = {
+  version: 8,
+  glyphs: `${OFM}/fonts/{fontstack}/{range}.pbf`,
+  sprite: `${OFM}/sprites/ofm_f384/ofm`,
+  sources: {
+    [BLUE_MARBLE]: {
+      type: "raster",
+      // WMTS order: {z}/{row}/{col}. The layer stops at zoom 8 (zoom 9 is a 400); MapLibre overzooms past it.
+      tiles: [
+        "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg",
+      ],
+      tileSize: 256,
+      maxzoom: 8,
+      attribution: '<a href="https://earthdata.nasa.gov/gibs" target="_blank">NASA Blue Marble (GIBS)</a>',
+    },
+    openmaptiles: {
+      type: "vector",
+      url: `${OFM}/planet`,
+      attribution:
+        '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> <a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+    },
+  },
+  layers: [
+    { id: "background", type: "background", paint: { "background-color": SPACE } },
+    {
+      id: BLUE_MARBLE,
+      type: "raster",
+      source: BLUE_MARBLE,
+      paint: { "raster-saturation": -1, "raster-brightness-max": 0.6, "raster-contrast": 0.2, "raster-fade-duration": 0 },
+    },
+    {
+      id: "roads",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "transportation",
+      minzoom: 6,
+      filter: ["match", ["get", "class"], ["motorway", "trunk", "primary"], true, false],
+      paint: { "line-color": LABEL, "line-opacity": 0.12, "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.4, 12, 1.2] },
+    },
+    {
+      id: "boundary-state",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "boundary",
+      minzoom: 4,
+      filter: ["all", ["==", ["get", "admin_level"], 4], ["!=", ["get", "maritime"], 1]],
+      paint: { "line-color": LABEL, "line-opacity": 0.12, "line-width": 0.6, "line-dasharray": [2, 2] },
+    },
+    {
+      id: "boundary-country",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "boundary",
+      filter: ["all", ["==", ["get", "admin_level"], 2], ["!=", ["get", "maritime"], 1]],
+      paint: { "line-color": LABEL, "line-opacity": 0.3, "line-width": 0.8 },
+    },
+    {
+      id: "label-town",
+      type: "symbol",
+      source: "openmaptiles",
+      "source-layer": "place",
+      minzoom: 8,
+      filter: ["==", ["get", "class"], "town"],
+      layout: { "text-field": PLACE_NAME, "text-font": ["Noto Sans Regular"], "text-size": 11 },
+      paint: { "text-color": LABEL, "text-opacity": 0.5, "text-halo-color": SPACE, "text-halo-width": 1 },
+    },
+    {
+      id: "label-city",
+      type: "symbol",
+      source: "openmaptiles",
+      "source-layer": "place",
+      filter: ["==", ["get", "class"], "city"],
+      layout: {
+        "text-field": PLACE_NAME,
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 4, 10, 10, 13],
+      },
+      paint: { "text-color": LABEL, "text-opacity": 0.6, "text-halo-color": SPACE, "text-halo-width": 1 },
+    },
+    {
+      id: "label-country",
+      type: "symbol",
+      source: "openmaptiles",
+      "source-layer": "place",
+      filter: ["==", ["get", "class"], "country"],
+      layout: {
+        "text-field": PLACE_NAME,
+        "text-font": ["Noto Sans Regular"],
+        "text-size": 11,
+        "text-transform": "uppercase",
+        "text-letter-spacing": 0.2,
+      },
+      paint: { "text-color": LABEL, "text-opacity": 0.5, "text-halo-color": SPACE, "text-halo-width": 1 },
+    },
+  ],
+}
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
 const isMobile = () => window.matchMedia(MOBILE).matches
@@ -100,21 +205,41 @@ function inBounds(w: ExploreWarehouse, [west, south, east, north]: [number, numb
 /** Globe look (atmosphere, globe → Mercator morph) and a clean globe without basemap labels. */
 function styleGlobe(map: MapLibreMap) {
   map.setProjection({ type: ["interpolate", ["linear"], ["zoom"], FLAT_FROM, "vertical-perspective", FLAT_TO, "mercator"] })
+  // A thin, subtle blue-white rim at the horizon.
   map.setSky({
     "sky-color": SPACE,
-    "horizon-color": "#2f5fb8",
-    "fog-color": "#0c1830",
-    "sky-horizon-blend": 0.5,
-    "horizon-fog-blend": 0.6,
-    "fog-ground-blend": 0.8,
-    "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 1, 3, 0.9, 5, 0],
+    "horizon-color": "#c8d8f0",
+    "fog-color": "#0a1222",
+    "sky-horizon-blend": 0.2,
+    "horizon-fog-blend": 0.3,
+    "fog-ground-blend": 0.9,
+    "atmosphere-blend": ["interpolate", ["linear"], ["zoom"], 0, 0.55, 3, 0.45, 5, 0],
   })
   for (const layer of map.getStyle().layers) {
     if (layer.type === "symbol") map.setLayerZoomRange(layer.id, Math.max(layer.minzoom ?? 0, FLAT_FROM), layer.maxzoom ?? 24)
   }
 }
 
+/** Recolours the light OpenFreeMap fallback style into the dark palette. */
+function darkenFallback(map: MapLibreMap) {
+  for (const l of map.getStyle().layers) {
+    const water = l.id.includes("water")
+    if (l.type === "background") map.setPaintProperty(l.id, "background-color", LAND)
+    else if (l.type === "fill") {
+      map.setPaintProperty(l.id, "fill-pattern", undefined)
+      map.setPaintProperty(l.id, "fill-color", water ? SPACE : LAND)
+    } else if (l.type === "line") map.setPaintProperty(l.id, "line-color", l.id.startsWith("boundary") ? BORDER : water ? SPACE : "#23262e")
+    else if (l.type === "symbol") {
+      map.setPaintProperty(l.id, "text-color", LABEL)
+      map.setPaintProperty(l.id, "text-halo-color", SPACE)
+      map.setPaintProperty(l.id, "icon-opacity", 0.35)
+    }
+  }
+}
+
 function addWarehouseLayers(map: MapLibreMap) {
+  // Also runs after a fallback restyle, which can land before or after the first "load".
+  if (map.getSource(SOURCE)) return
   map.addSource(SOURCE, { type: "geojson", data: toGeoJSON([]), cluster: true, clusterRadius: 55, clusterMaxZoom: 14 })
   const isCluster: ExpressionSpecification = ["has", "point_count"]
   map.addLayer({
@@ -122,7 +247,20 @@ function addWarehouseLayers(map: MapLibreMap) {
     type: "circle",
     source: SOURCE,
     filter: isCluster,
-    paint: { "circle-color": GOLD, "circle-radius": ["+", CLUSTER_RADIUS, 10], "circle-blur": 0.9, "circle-opacity": 0.2 },
+    paint: { "circle-color": GOLD, "circle-radius": ["+", CLUSTER_RADIUS, 12], "circle-blur": 1, "circle-opacity": 0.25 },
+  })
+  map.addLayer({
+    id: "cluster-ring",
+    type: "circle",
+    source: SOURCE,
+    filter: isCluster,
+    paint: {
+      "circle-radius": ["+", CLUSTER_RADIUS, 4],
+      "circle-opacity": 0,
+      "circle-stroke-width": 1,
+      "circle-stroke-color": GOLD,
+      "circle-stroke-opacity": 0.45,
+    },
   })
   map.addLayer({
     id: "clusters",
@@ -131,10 +269,11 @@ function addWarehouseLayers(map: MapLibreMap) {
     filter: isCluster,
     paint: {
       "circle-color": GOLD,
-      "circle-opacity": 0.45,
+      "circle-opacity": 0.35,
       "circle-radius": CLUSTER_RADIUS,
-      "circle-stroke-width": 1.5,
+      "circle-stroke-width": 1,
       "circle-stroke-color": GOLD,
+      "circle-stroke-opacity": 0.9,
     },
   })
   map.addLayer({
@@ -148,14 +287,14 @@ function addWarehouseLayers(map: MapLibreMap) {
       "text-size": 13,
       "text-allow-overlap": true,
     },
-    paint: { "text-color": "#fff", "text-halo-color": "rgba(0,0,0,0.45)", "text-halo-width": 1 },
+    paint: { "text-color": "#fdf3dc", "text-halo-color": "rgba(5,7,13,0.6)", "text-halo-width": 1 },
   })
   map.addLayer({
     id: "point-glow",
     type: "circle",
     source: SOURCE,
     filter: UNCLUSTERED,
-    paint: { "circle-color": GOLD, "circle-radius": 16, "circle-blur": 1, "circle-opacity": 0.2 },
+    paint: { "circle-color": GOLD, "circle-radius": 12, "circle-blur": 1, "circle-opacity": 0.35 },
   })
   map.addLayer({
     id: "point-highlight",
@@ -171,10 +310,11 @@ function addWarehouseLayers(map: MapLibreMap) {
     filter: UNCLUSTERED,
     paint: {
       "circle-color": GOLD,
-      "circle-opacity": 0.85,
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 2, 5, 10, 8],
-      "circle-stroke-width": 1.5,
-      "circle-stroke-color": "#fff",
+      "circle-opacity": 0.95,
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 2, 3.5, 10, 6],
+      "circle-stroke-width": 1,
+      "circle-stroke-color": "#fdf3dc",
+      "circle-stroke-opacity": 0.7,
     },
   })
 }
@@ -221,8 +361,8 @@ function PopupCard({ w }: { w: ExploreWarehouse }) {
 }
 
 /**
- * Globe → flat map warehouse explorer (MapLibre + OpenFreeMap). Opens on a
- * slowly rotating globe with a hero; "Explore", a city search or zooming in
+ * Globe → flat map warehouse explorer (MapLibre, NASA Blue Marble + OpenFreeMap). Opens on a
+ * fixed globe centred on India with a hero; "Explore", a city search or zooming in
  * flies to the flat map with clustered markers and a listing panel synced to
  * the visible area. City filters in the browser; max rate and industry are
  * server filters that refetch both markers and cards.
@@ -233,13 +373,10 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
   const mapRef = useRef<MapLibreMap | null>(null)
   const libRef = useRef<MapLibre | null>(null)
   const modeRef = useRef<Mode>("globe")
-  /** Mirrors `rotating` synchronously, so a frame queued before the re-render can't fight a gesture or flight. */
-  const spinRef = useRef(true)
 
   const [mapReady, setMapReady] = useState(false)
   const [popupEl, setPopupEl] = useState<HTMLDivElement | null>(null)
   const [mode, setMode] = useState<Mode>("globe")
-  const [rotating, setRotating] = useState(true)
   const [panelOpen, setPanelOpen] = useState(true)
 
   const [filters, setFilters] = useState<ExploreFilters>({ maxRate: null, industry: "" })
@@ -323,13 +460,7 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     )
   }
 
-  function stopRotating() {
-    spinRef.current = false
-    setRotating(false)
-  }
-
   function enterMap(fly = true) {
-    stopRotating()
     if (modeRef.current === "map") return
     modeRef.current = "map"
     setMode("map")
@@ -344,12 +475,6 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     setMode("globe")
     setPopupId(null)
     setHoverId(null)
-    // Resume rotating once the flight back has landed (a rotation frame would cancel it).
-    map.once("moveend", () => {
-      if (modeRef.current !== "globe") return
-      spinRef.current = true
-      setRotating(true)
-    })
     moveTo({ ...globeView(containerRef.current), bearing: 0, pitch: 0 })
   }
 
@@ -384,7 +509,6 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
   }
 
   // ---------- Map listeners (always see the latest state) ----------
-  const onUserInteract = useEffectEvent(() => stopRotating())
   const onZoom = useEffectEvent((programmatic: boolean, zoom: number) => {
     if (modeRef.current === "globe" && !programmatic && zoom > ENTER_MAP_ZOOM) enterMap(false)
   })
@@ -412,6 +536,12 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     const { zoom, padding } = globeView(containerRef.current)
     map.jumpTo({ zoom, padding }, PROGRAMMATIC)
   })
+  /** After a fallback restyle the warehouse layers are new and empty: refill them. */
+  const onRestyled = useEffectEvent(() => {
+    const map = mapRef.current
+    map?.getSource<GeoJSONSource>(SOURCE)?.setData(toGeoJSON(filtered))
+    map?.setFilter("point-highlight", ["all", UNCLUSTERED, ["==", ["get", "id"], hoverId ?? ""]])
+  })
 
   // ---------- Map lifecycle: one map per mount, fully torn down (safe under StrictMode) ----------
   useEffect(() => {
@@ -427,26 +557,40 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
       const view = globeView(container)
       const m = new lib.Map({
         container,
-        style: STYLE_URL,
+        style: DARK_STYLE,
         center: view.center,
         zoom: view.zoom,
-        attributionControl: { compact: true },
+        attributionControl: { compact: false },
         renderWorldCopies: false,
       })
       map = m
       mapRef.current = m
       m.jumpTo({ padding: view.padding }, PROGRAMMATIC)
       m.addControl(new lib.NavigationControl({ showCompass: false }), "top-right")
-      m.on("error", (e) => console.error("[explore map]", e))
-      m.on("style.load", () => styleGlobe(m))
+      // Fall back to the recoloured OpenFreeMap style only if GIBS fails before serving any tile.
+      let gibsOk = false
+      let fellBack = false
+      m.on("sourcedata", (e) => {
+        if (e.sourceId === BLUE_MARBLE && e.tile) gibsOk = true
+      })
+      m.on("error", (e) => {
+        console.error("[explore map]", e)
+        if (gibsOk || fellBack || (e as unknown as { sourceId?: string }).sourceId !== BLUE_MARBLE) return
+        fellBack = true
+        m.setStyle(FALLBACK_STYLE_URL)
+      })
+      m.on("style.load", () => {
+        styleGlobe(m)
+        if (!fellBack) return
+        darkenFallback(m)
+        addWarehouseLayers(m)
+        onRestyled()
+      })
       m.on("load", () => {
         addWarehouseLayers(m)
         setPopupEl(document.createElement("div"))
         setMapReady(true)
       })
-      m.on("mousedown", () => onUserInteract())
-      m.on("touchstart", () => onUserInteract())
-      m.on("wheel", () => onUserInteract())
       m.on("zoom", (e) => onZoom(!!(e as unknown as { programmatic?: boolean }).programmatic, m.getZoom()))
       m.on("moveend", () => onMoveEnd())
       m.on("click", "clusters", async (e) => {
@@ -475,25 +619,6 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
       setMapReady(false)
     }
   }, [])
-
-  // The single rotation loop: only on the globe, until the user interacts.
-  useEffect(() => {
-    const map = mapRef.current
-    if (!mapReady || !map || mode !== "globe" || !rotating || reducedMotion()) return
-    let raf = 0
-    let last = performance.now()
-    const tick = (now: number) => {
-      if (!spinRef.current || modeRef.current !== "globe") return
-      const dt = Math.min(now - last, 100) / 1000
-      last = now
-      const c = map.getCenter()
-      const lng = ((c.lng + ROTATE_DEG_PER_SEC * dt + 540) % 360) - 180
-      map.setCenter([lng, c.lat], PROGRAMMATIC)
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [mapReady, mode, rotating])
 
   useEffect(() => {
     if (!mapReady) return
@@ -544,7 +669,8 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
   return (
     <div className="relative h-[calc(100dvh-4rem)] min-h-[560px] w-full overflow-hidden" style={{ background: SPACE }}>
       {/* MapLibre's unlayered .maplibregl-map { position: relative } beats Tailwind's layered utilities, so position on a wrapper. */}
-      <div className="absolute inset-0">
+      {/* Same cascade issue for the attribution bar, hence the `!` overrides. */}
+      <div className="absolute inset-0 [&_.maplibregl-ctrl-attrib]:bg-[#05070d]/60! [&_.maplibregl-ctrl-attrib]:text-[10px]! [&_.maplibregl-ctrl-attrib]:text-white/50! [&_.maplibregl-ctrl-attrib_a]:text-white/60!">
         <div ref={containerRef} className="size-full" aria-label="Warehouse map" />
       </div>
 
@@ -553,7 +679,7 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
         aria-hidden
         className={cn(
           "pointer-events-none absolute inset-0 transition-opacity duration-700 motion-reduce:transition-none",
-          "bg-gradient-to-t from-[#05080f] via-[#05080f]/60 to-transparent md:bg-gradient-to-r md:via-[#05080f]/50",
+          "bg-gradient-to-t from-[#05070d] via-[#05070d]/60 to-transparent md:bg-gradient-to-r md:via-[#05070d]/50",
           mode === "globe" ? "opacity-100" : "opacity-0",
         )}
       />
@@ -565,13 +691,22 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
         )}
       >
         <div className="pointer-events-auto flex w-full max-w-md flex-col gap-5 text-white">
-          <h1 className="font-heading text-4xl leading-[1.05] tracking-tight text-balance sm:text-6xl">Find warehouses across India</h1>
+          <h1 className="font-heading text-4xl leading-[1.05] tracking-tight text-balance sm:text-6xl">Find Warehouses Across India</h1>
           <p className="text-sm text-white/70 sm:text-base">
-            Verified, flexible warehouse space across India&apos;s logistics corridors. Spin the globe, search a city, or dive in.
+            Be as dynamic as demand. Access flexible warehousing and land parcels across {cities.length > 0 && `${cities.length} `}Indian
+            cities and pay only for what you use.
           </p>
-          <form onSubmit={searchCity} className="flex gap-2" autoComplete="off">
+          <ul className="flex flex-col gap-2 text-sm text-white/85">
+            {["Go live in weeks, not months", "Grade A, cold chain and land parcels", "Transparent ₹/sq ft pricing"].map((b) => (
+              <li key={b} className="flex items-center gap-2.5">
+                <Check className="size-4 shrink-0 text-[#F5B82E]" />
+                {b}
+              </li>
+            ))}
+          </ul>
+          <form onSubmit={searchCity} className="flex" autoComplete="off">
             <div className="relative flex-1">
-              <MapPin className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+              <MapPin className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-white/50" />
               <Input
                 value={heroCity}
                 onChange={(e) => {
@@ -581,7 +716,7 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
                 list="explore-cities"
                 aria-label="Search a city"
                 placeholder={cities.length ? `Search by city, e.g. ${cities[0]}` : "Search by city"}
-                className="h-10 rounded-full pl-10"
+                className="h-11 rounded-none border-white/20 bg-black/40 pl-10 text-white placeholder:text-white/40 focus-visible:border-white/40"
               />
               <datalist id="explore-cities">
                 {cities.map((c) => (
@@ -589,7 +724,13 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
                 ))}
               </datalist>
             </div>
-            <Button type="submit" size="icon-lg" aria-label="Search">
+            <Button
+              type="submit"
+              size="icon-lg"
+              variant="outline"
+              aria-label="Search"
+              className="size-11 rounded-none border-l-0 border-white/20 bg-black/40 text-white hover:bg-white/10 hover:text-white"
+            >
               <ArrowRight />
             </Button>
           </form>
@@ -598,7 +739,11 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
               {heroMiss}
             </p>
           )}
-          <Button size="lg" variant="outline" className="self-start" onClick={() => enterMap()}>
+          <Button
+            size="lg"
+            className="h-11 self-start rounded-none bg-[#F5B82E] px-6 font-semibold text-[#05070d] hover:bg-[#F5B82E]/90"
+            onClick={() => enterMap()}
+          >
             Explore warehouses
           </Button>
         </div>
