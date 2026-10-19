@@ -14,16 +14,21 @@ import { cn } from "@/lib/utils"
 import { SORT_OPTIONS, type FinderSort, type FinderWarehouse } from "../entities/finder.entity"
 import { inBounds, LEFT_AREA, type MapBounds } from "../lib/layout"
 import { activeFilterCount, finderCities, useFinderSearch } from "../lib/use-finder-search"
+import { useMediaQuery } from "../lib/use-media-query"
 import { useSessionFlag } from "../lib/use-session-flag"
-import { FiltersPanel } from "./filters-panel"
+import { ActiveFilters, FiltersPanel } from "./filters-panel"
 import { FinderCard } from "./finder-card"
 import { MapOverlay } from "./map-overlay"
+import { QuickView } from "./quick-view"
 import { CardSkeleton, Notice } from "./result-states"
 
 const NO_RESULTS: FinderWarehouse[] = []
 const COLLAPSED_KEY = "explore-finder:filters-collapsed"
 /** The map reports bounds on every moveend; the list settles on them after this pause. */
 const BOUNDS_DEBOUNCE_MS = 150
+/** EXPLORE-FILTERS: the full filters column needs this much room; between lg and here it stays a rail. */
+const WIDE = "(min-width: 1280px)"
+const DESKTOP = "(min-width: 1024px)"
 
 const plural = (n: number, word: string) => `${formatNumber(n)} ${word}${n === 1 ? "" : "s"}`
 const sqftOf = (list: FinderWarehouse[]) => list.reduce((sum, w) => sum + (w.totalSqft > 0 ? w.totalSqft : 0), 0)
@@ -94,8 +99,14 @@ export function ExplorePanel({
   const { filters, loading, error, result, resultScope, change, clear, retry } = search
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [collapsed, setCollapsed] = useSessionFlag(COLLAPSED_KEY)
+  const wide = useMediaQuery(WIDE) // EXPLORE-FILTERS
+  const desktop = useMediaQuery(DESKTOP) // EXPLORE-FILTERS
+  /** EXPLORE-FILTERS: the full column (wide screens, not collapsed); otherwise a rail on desktop. */
+  const showColumn = wide && !collapsed
   const [searchAsMove, setSearchAsMove] = useState(true)
   const [viewBounds, setViewBounds] = useState(bounds)
+  /** EXPLORE-FILTERS: the warehouse in the quick-view popup (kept while it animates closed). */
+  const [quick, setQuick] = useState<{ w: FinderWarehouse | null; open: boolean }>({ w: null, open: false })
   const cardRefs = useRef(new Map<string, HTMLElement>())
   const results = useMemo(() => result?.results ?? NO_RESULTS, [result])
   const count = activeFilterCount(filters)
@@ -118,7 +129,7 @@ export function ExplorePanel({
 
   useEffect(() => {
     onLayout()
-  }, [collapsed, onLayout])
+  }, [showColumn, onLayout]) // EXPLORE-FILTERS: was `collapsed`
 
   // Results inside the map's visible area, in the search's sort order.
   const inView = useMemo(
@@ -132,6 +143,13 @@ export function ExplorePanel({
   const list = pinned ? [pinned, ...base] : base
   const listSqft = searchAsMove ? inViewSqft : sqftOf(results)
 
+  /** EXPLORE-FILTERS: a card click still selects it (map flies to its pin) and now opens the quick view. */
+  const openCard = (shortId: string) => {
+    onSelectCard(shortId)
+    const w = results.find((x) => x.shortId === shortId)
+    if (w) setQuick({ w, open: true })
+  }
+
   // A pin click (or card click) brings its card into view.
   useEffect(() => {
     if (!selected) return
@@ -144,9 +162,10 @@ export function ExplorePanel({
   )
   const clearLink = count > 0 && (
     <button type="button" onClick={clear} className="rounded-md text-sm font-medium text-[#f9cc63] underline-offset-4 hover:underline">
-      Clear filters
+      Clear all
     </button>
   )
+  const activeRow = <ActiveFilters filters={filters} onChange={change} /> // EXPLORE-FILTERS
 
   let body: React.ReactNode
   if (error && !result) {
@@ -190,7 +209,7 @@ export function ExplorePanel({
         w={w}
         active={selected?.id === w.shortId || hoverId === w.shortId}
         onHover={onHover}
-        onSelect={onSelectCard}
+        onSelect={openCard} // EXPLORE-FILTERS: was onSelectCard
       />
     ))
   }
@@ -224,31 +243,59 @@ export function ExplorePanel({
       )}
     >
       <div className={cn("pointer-events-auto absolute flex gap-3", LEFT_AREA)}>
-        {!collapsed && (
-          <aside aria-label="Filters" className="xf-glass hidden w-[300px] shrink-0 flex-col overflow-hidden rounded-3xl lg:flex">
-            <div className="flex items-center gap-2 px-5 pt-5 pb-4">
-              <h2 className="text-base font-semibold text-white">Filters</h2>
-              <CountBadge count={count} />
-              <span className="ml-auto">{clearLink}</span>
+        {/* EXPLORE-FILTERS: the filters column is the page's anchor; collapsed (or below xl) it is a slim rail. */}
+        {showColumn ? (
+          <aside
+            aria-label="Filters"
+            data-active={count > 0}
+            className="xf-glass xf-filters flex w-[clamp(380px,26vw,520px)] shrink-0 flex-col overflow-hidden rounded-3xl"
+          >
+            <div className="flex flex-col gap-3 border-b border-white/10 px-5 pt-5 pb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-white">Filters</h2>
+                <CountBadge count={count} />
+                <span className="ml-auto">{clearLink}</span>
+                <button
+                  type="button"
+                  onClick={() => setCollapsed(true)}
+                  aria-label="Collapse filters"
+                  title="Collapse filters"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full text-white/75 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <PanelLeftClose className="size-[18px]" />
+                </button>
+              </div>
+              {activeRow}
+            </div>
+            <div className="xf-scroll min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-8">{filtersForm}</div>
+          </aside>
+        ) : (
+          desktop && (
+            <aside aria-label="Filters" data-active={count > 0} className="xf-glass xf-filters flex w-14 shrink-0 flex-col items-center rounded-3xl py-4">
               <button
                 type="button"
-                onClick={() => setCollapsed(true)}
-                aria-label="Collapse filters"
-                title="Collapse filters"
-                className="flex size-8 shrink-0 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                onClick={() => (wide ? setCollapsed(false) : setDrawerOpen(true))}
+                aria-label={count ? `Show filters (${count} active)` : "Show filters"}
+                title="Show filters"
+                className="relative flex size-10 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/10 hover:text-white"
               >
-                <PanelLeftClose className="size-4" />
+                <SlidersHorizontal aria-hidden className="size-5" />
+                {count > 0 && (
+                  <span aria-hidden className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F5B82E] px-1 text-xs font-bold text-[#0a1220]">
+                    {count}
+                  </span>
+                )}
               </button>
-            </div>
-            <div className="xf-scroll min-h-0 flex-1 overflow-y-auto px-5 pb-6">{filtersForm}</div>
-          </aside>
+            </aside>
+          )
         )}
 
-        <section aria-label="Results" className="xf-glass @container flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl">
-          <header className="flex flex-col gap-3 px-5 pt-5 pb-4">
+        {/* EXPLORE-FILTERS: the cards column is the calmer surface; the filters column leads. */}
+        <section aria-label="Results" className="xf-glass xf-calm flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl">
+          <header className="flex flex-col gap-3 px-4 pt-4 pb-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 flex-col gap-0.5" aria-live="polite">
-                <h2 className="flex items-center gap-2 text-lg leading-tight font-semibold text-white">
+                <h2 className="flex items-center gap-2 text-[15px] leading-tight font-semibold text-white/90">
                   {result
                     ? searchAsMove
                       ? `${plural(list.length, "warehouse")} in this area`
@@ -256,14 +303,14 @@ export function ExplorePanel({
                     : "Loading warehouses…"}
                   {loading && result && <Loader2 aria-label="Updating results" className="size-4 shrink-0 animate-spin text-[#f9cc63]" />}
                 </h2>
-                <p className="text-sm text-white/70">{result ? `${formatNumber(listSqft)} total sqft` : "\u00a0"}</p>
+                <p className="text-[13px] text-white/65">{result ? `${formatNumber(listSqft)} total sqft` : "\u00a0"}</p>
               </div>
               {sortSelect}
             </div>
-            {/* Below lg: the drawer. Wide screens: reopens the collapsed column. */}
-            <div className={cn("flex items-center gap-2", !collapsed && "lg:hidden")}>
-              <FiltersPill count={count} onClick={() => setDrawerOpen(true)} className="inline-flex lg:hidden" />
-              {collapsed && <FiltersPill count={count} onClick={() => setCollapsed(false)} className="hidden lg:inline-flex" />}
+            {/* Below lg: the drawer (desktop uses the column or its rail). EXPLORE-FILTERS */}
+            <div className="flex flex-col gap-3 lg:hidden">
+              <FiltersPill count={count} onClick={() => setDrawerOpen(true)} className="inline-flex self-start" />
+              {activeRow}
             </div>
             {!!error && result && (
               <p role="alert" className="text-sm text-red-300">
@@ -276,8 +323,8 @@ export function ExplorePanel({
           </header>
           <div
             className={cn(
-              "xf-scroll grid min-h-0 flex-1 auto-rows-max grid-cols-1 gap-4 overflow-y-auto px-5 pb-5 transition-opacity duration-200",
-              collapsed && "lg:@min-[640px]:grid-cols-2",
+              // EXPLORE-FILTERS: exactly one card per row.
+              "xf-scroll grid min-h-0 flex-1 auto-rows-max grid-cols-1 gap-4 overflow-y-auto px-4 pb-4 transition-opacity duration-200",
               loading && result && "opacity-75",
             )}
             onMouseLeave={() => onHover(null)}
@@ -296,15 +343,24 @@ export function ExplorePanel({
         onZoom={onZoom}
       />
 
+      <QuickView w={quick.w} open={quick.open} filters={filters} onClose={() => setQuick((q) => ({ ...q, open: false }))} />
+
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        {/* EXPLORE-FILTERS: a bottom sheet on mobile, a side drawer from the rail between lg and xl. */}
         <SheetContent
-          side="bottom"
-          className="xf xf-drawer xf-popover xf-scroll max-h-[85dvh] overflow-y-auto rounded-t-3xl text-white lg:hidden"
+          side={desktop ? "left" : "bottom"}
+          className={cn(
+            "dark site xf xf-drawer xf-popover xf-scroll overflow-y-auto text-white", // EXPLORE-FILTERS: + dark site (the drawer portals out of the site wrapper)
+            desktop ? "w-[380px] max-w-[90vw] rounded-r-3xl sm:max-w-[380px]" : "max-h-[85dvh] rounded-t-3xl",
+          )}
         >
-          <SheetHeader className="flex-row items-center gap-2 px-5 pt-5 pb-0">
-            <SheetTitle className="text-base font-semibold text-white">Filters</SheetTitle>
-            <CountBadge count={count} />
-            <span className="mr-10 ml-auto">{clearLink}</span>
+          <SheetHeader className="gap-3 px-5 pt-5 pb-0">
+            <div className="flex items-center gap-2">
+              <SheetTitle className="text-lg font-semibold text-white">Filters</SheetTitle>
+              <CountBadge count={count} />
+              <span className="mr-10 ml-auto">{clearLink}</span>
+            </div>
+            {activeRow}
           </SheetHeader>
           <div className="px-5 pb-8">{filtersForm}</div>
         </SheetContent>

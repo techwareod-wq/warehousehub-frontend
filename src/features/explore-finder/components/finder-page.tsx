@@ -81,6 +81,7 @@ export function FinderPage() {
         w={w}
         active={selected?.id === w.shortId || hoverId === w.shortId}
         onHover={setHoverId}
+        onSelect={select} // EXPLORE-FILTERS: the card no longer links out; it selects
       />
     ))
   }

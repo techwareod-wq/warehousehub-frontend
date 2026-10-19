@@ -70,7 +70,7 @@ export function PlaceSelect({
             e.currentTarget.blur()
           }
         }}
-        className="xf-input h-11 w-full rounded-[14px] pr-10 pl-10 text-sm outline-none"
+        className="xf-input h-12 w-full rounded-[14px] pr-10 pl-10 text-base outline-none"
       />
       {value && !open ? (
         <button

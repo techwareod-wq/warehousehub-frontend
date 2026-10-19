@@ -1,8 +1,8 @@
 import type { Map as MapLibreMap } from "maplibre-gl"
 
 // EXPLORE-FILTERS: the map has its own column now, so the camera pads every side the same.
-/** Breathing room on every side of the fitted area. */
-const EDGE = 48
+/** Breathing room on every side of the fitted area (EXPLORE-FILTERS: 32px, the map column is narrower). */
+const EDGE = 32
 /** At least this share of the canvas, per axis, is always left for the fitted area. */
 const MIN_FREE = 0.4
 const SINGLE_ZOOM = 10

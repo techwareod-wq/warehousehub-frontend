@@ -1,6 +1,7 @@
 import type { Map as MapLibreMap } from "maplibre-gl"
 import type { LatLng } from "../entities/finder.entity"
 import { STYLE_URL } from "./map"
+import { fillMissingImages } from "./missing-images" // EXPLORE-FILTERS
 
 /** CSS size of a card thumbnail; rendered at 2× for sharp screens. */
 const W = 320
@@ -33,6 +34,7 @@ function snapshotMap(): Promise<MapLibreMap> {
           pixelRatio: 2,
           canvasContextAttributes: { preserveDrawingBuffer: true },
         })
+        fillMissingImages(m) // EXPLORE-FILTERS: silence the dark style's missing-sprite warnings
         m.once("load", () => resolve(m))
       }),
   )

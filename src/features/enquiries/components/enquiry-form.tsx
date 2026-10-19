@@ -22,10 +22,13 @@ const MESSAGE_MIN = 10
 export function EnquiryForm({
   listingShortId,
   listingName,
+  initialMessage, // EXPLORE-FILTERS
   className,
 }: {
   listingShortId?: string
   listingName?: string
+  /** EXPLORE-FILTERS: prefills "What do you need?" (the Explore quick view passes the searched city and space). */
+  initialMessage?: string
   /** Replaces the default glass panel styling (layout classes stay). */
   className?: string
 }) {
@@ -48,18 +51,18 @@ export function EnquiryForm({
         </div>
       </Show>
       <Show when="signed-in">
-        <SignedInForm listingShortId={listingShortId} />
+        <SignedInForm listingShortId={listingShortId} initialMessage={initialMessage} /* EXPLORE-FILTERS: + initialMessage */ />
       </Show>
     </div>
   )
 }
 
-function SignedInForm({ listingShortId }: { listingShortId?: string }) {
+function SignedInForm({ listingShortId, initialMessage }: { listingShortId?: string; initialMessage?: string }) { // EXPLORE-FILTERS: + initialMessage
   const { user } = useUser()
   const [name, setName] = useState("")
   const [company, setCompany] = useState("")
   const [phone, setPhone] = useState("")
-  const [message, setMessage] = useState("")
+  const [message, setMessage] = useState(initialMessage ?? "") // EXPLORE-FILTERS: was ""
   const [idempotencyKey] = useState(newIdempotencyKey)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState("")

@@ -994,7 +994,8 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
       </>
       )}
 
-      {popupEl && popupWarehouse && createPortal(<PopupCard w={popupWarehouse} />, popupEl)}
+      {/* EXPLORE-FILTERS (remove to uninstall): the old pin popup links to the detail page; the finder view never shows it. */}
+      {!exploreFiltersEnabled && popupEl && popupWarehouse && createPortal(<PopupCard w={popupWarehouse} />, popupEl)}
     </div>
   )
 }
