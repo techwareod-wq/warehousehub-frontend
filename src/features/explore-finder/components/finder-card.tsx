@@ -1,29 +1,29 @@
 "use client"
 
+// EXPLORE-FILTERS: redesigned glass card (thumbnail | name, pills, 2x2 specs; tags, distance, rate below).
+
 import { forwardRef } from "react"
 import Link from "next/link"
-import { MapPin } from "lucide-react"
+import { ArrowRight, MapPin } from "lucide-react"
 import { formatRate } from "@/features/search"
 import { formatNumber } from "@/lib/format"
-import { cn } from "@/lib/utils"
 import { TYPE_LABELS, type FinderWarehouse } from "../entities/finder.entity"
 import { MapThumb } from "./map-thumb"
 
 const DASH = "-"
 
-function Row({ label, value }: { label: string; value: string }) {
+function Spec({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-2 border-b border-white/5 py-1 last:border-0">
-      <dt className="text-[11px] text-white/55">{label}</dt>
-      <dd className="text-right text-sm font-medium text-white tabular-nums">{value}</dd>
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <dt className="text-xs tracking-wide text-white/70">{label}</dt>
+      <dd className="truncate text-[15px] font-semibold text-white tabular-nums">{value}</dd>
     </div>
   )
 }
 
 /**
- * A finder result: map thumbnail on the left, key numbers on the right, tags / distance / rate below.
- * Without `onSelect` the whole card links to the listing; with it, a click selects the card
- * (Explore flies the map to its pin) and a "View details" link opens the listing.
+ * A finder result. Without `onSelect` the whole card links to the listing; with it, a click
+ * selects the card (Explore flies the map to its pin) and a small arrow link opens the listing.
  */
 export const FinderCard = forwardRef<
   HTMLElement,
@@ -34,70 +34,76 @@ export const FinderCard = forwardRef<
   const extra = w.tags.length - 2
   const href = `/warehouses/${w.slug}`
   const shared = {
-    title: w.name,
+    "data-active": active,
     onMouseEnter: () => onHover(w.shortId),
     onMouseLeave: () => onHover(null),
     onFocus: () => onHover(w.shortId),
     onBlur: () => onHover(null),
-    className: cn(
-      "glass flex scroll-mt-4 flex-col gap-3 rounded-2xl p-3 outline-offset-4 transition-[border-color,box-shadow]",
-      onSelect && "cursor-pointer",
-      active ? "border-[#F5B82E]! shadow-[0_0_0_1px_#F5B82E,0_8px_30px_-8px_rgb(245_184_46/40%)]" : "hover:border-white/25!",
-    ),
+    className: "xf-card @container flex scroll-mt-4 flex-col gap-4 rounded-3xl p-4 text-left",
   }
   const body = (
     <>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-semibold tracking-[0.18em] text-white/50 uppercase">Location in map</span>
-          <MapThumb point={w.loc} className="aspect-[4/3] w-full" />
-        </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <span className="self-start rounded-md border border-[#F5B82E]/40 bg-[#F5B82E]/15 px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wider text-[#F5B82E] uppercase">
-            {w.shortId}
-          </span>
-          {(place || type) && (
-            <p className="flex min-w-0 items-center gap-1 text-xs text-white/70">
-              <MapPin className="size-3 shrink-0" />
-              <span className="truncate">{place}</span>
-              {type && <span className="shrink-0 text-[11px] font-semibold text-[#F5B82E]">· {type}</span>}
-            </p>
-          )}
-          <dl className="mt-0.5 flex flex-col">
-            <Row label="Capacity" value={w.totalSqft > 0 ? `${formatNumber(w.totalSqft)} sqft` : DASH} />
-            <Row label="Height" value={w.clearHeight ? `${formatNumber(w.clearHeight.value, 1)} ${w.clearHeight.unit}` : DASH} />
-            <Row label="Docks" value={w.dockDoors !== null ? formatNumber(w.dockDoors) : DASH} />
-            <Row label="Hold cap." value={w.holdCapacityMt !== null ? `${formatNumber(w.holdCapacityMt)} MT` : DASH} />
+      {/* Thumbnail left (narrower on small cards); on top in very narrow cards, e.g. the 2-column grid. */}
+      <div className="flex gap-4 @max-[339px]:flex-col">
+        <MapThumb
+          point={w.loc}
+          className="min-h-[148px] w-[148px] shrink-0 rounded-2xl @max-[439px]:min-h-[120px] @max-[439px]:w-[112px] @max-[339px]:aspect-[16/9] @max-[339px]:min-h-0 @max-[339px]:w-full"
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h3 className="truncate text-base leading-snug font-semibold text-white" title={w.name}>
+              {w.name}
+            </h3>
+            {place && (
+              <p className="flex min-w-0 items-center gap-1 text-[13px] text-white/70">
+                <MapPin aria-hidden className="size-3.5 shrink-0" />
+                <span className="truncate">{place}</span>
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="rounded-full border border-[#F5B82E]/45 bg-[#F5B82E]/15 px-2.5 py-0.5 font-mono text-xs font-semibold tracking-wider text-[#f9cc63] uppercase">
+              {w.shortId}
+            </span>
+            {type && <span className="rounded-full border border-white/15 bg-white/8 px-2.5 py-0.5 text-xs font-medium text-white/90">{type}</span>}
+          </div>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+            <Spec label="Capacity" value={w.totalSqft > 0 ? `${formatNumber(w.totalSqft)} sqft` : DASH} />
+            <Spec label="Height" value={w.clearHeight ? `${formatNumber(w.clearHeight.value, 1)} ${w.clearHeight.unit}` : DASH} />
+            <Spec label="Docks" value={w.dockDoors !== null ? formatNumber(w.dockDoors) : DASH} />
+            <Spec label="Hold cap." value={w.holdCapacityMt !== null ? `${formatNumber(w.holdCapacityMt)} MT` : DASH} />
           </dl>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-white/10 pt-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-white/10 pt-3">
         <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
           {w.tags.slice(0, 2).map((t) => (
-            <span key={t} className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] text-white/80">
+            <span key={t} className="rounded-full bg-white/8 px-2.5 py-0.5 text-xs text-white/85">
               {t}
             </span>
           ))}
           {extra > 0 && (
-            <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] text-white/60" title={w.tags.slice(2).join(", ")}>
+            <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-xs text-white/70" title={w.tags.slice(2).join(", ")}>
               +{extra}
             </span>
           )}
         </div>
         {w.distKm !== null && (
-          <span className="text-xs text-white/60 tabular-nums">{`${formatNumber(w.distKm, w.distKm < 10 ? 1 : 0)} km`}</span>
+          <span className="text-[13px] text-white/70 tabular-nums">{`${formatNumber(w.distKm, w.distKm < 10 ? 1 : 0)} km`}</span>
         )}
-        <span className="font-heading text-sm font-semibold text-[#F5B82E]">{formatRate(w.rate)}</span>
+        <span className="text-[15px] font-bold text-[#f9cc63]">{formatRate(w.rate)}</span>
+        {onSelect && (
+          <Link
+            href={href}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`View details for ${w.name}`}
+            className="group inline-flex items-center gap-1 rounded-full text-[13px] font-medium text-white/70 transition-colors hover:text-[#f9cc63]"
+          >
+            View details
+            <ArrowRight aria-hidden className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        )}
       </div>
-      {onSelect && (
-        <Link
-          href={href}
-          onClick={(e) => e.stopPropagation()}
-          className="-mt-1 self-end text-xs font-medium text-[#F5B82E] underline-offset-4 hover:underline"
-        >
-          View details →
-        </Link>
-      )}
     </>
   )
 

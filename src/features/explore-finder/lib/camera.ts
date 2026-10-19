@@ -1,9 +1,8 @@
 import type { Map as MapLibreMap } from "maplibre-gl"
 
+// EXPLORE-FILTERS: the map has its own column now, so the camera pads every side the same.
 /** Breathing room on every side of the fitted area. */
 const EDGE = 48
-/** Wide screens: the finder panel floats over the left of the map. */
-const SIDE_PANEL = "(min-width: 1024px)"
 /** At least this share of the canvas, per axis, is always left for the fitted area. */
 const MIN_FREE = 0.4
 const SINGLE_ZOOM = 10
@@ -11,6 +10,9 @@ const FALLBACK_ZOOM = 5
 
 type Point = { lat: number; lng: number }
 export type Padding = { top: number; right: number; bottom: number; left: number }
+
+/** Uniform camera padding for the split layout (nothing floats over the fitted area). */
+export const FIT_PADDING: Padding = { top: EDGE, right: EDGE, bottom: EDGE, left: EDGE }
 
 function shrink(a: number, b: number, size: number): [number, number] {
   const max = size * (1 - MIN_FREE)
@@ -27,24 +29,6 @@ export function clampPadding(p: Padding, width: number, height: number): Padding
   const [left, right] = shrink(p.left, p.right, width)
   const [top, bottom] = shrink(p.top, p.bottom, height)
   return { top, right, bottom, left }
-}
-
-/**
- * Camera padding for the finder layout: 48px all round, plus whatever the
- * panel actually covers: its width on wide screens (it floats over the map's
- * left), the toolbar on small screens in map view. Measured on screen, so the
- * full-width list (where the map is hidden anyway) never inflates it.
- */
-export function finderPadding(container: HTMLElement | null, panel: HTMLElement | null): Padding {
-  const pad = { top: EDGE, right: EDGE, bottom: EDGE, left: EDGE }
-  if (!container) return pad
-  const c = container.getBoundingClientRect()
-  const p = panel?.getBoundingClientRect()
-  if (p && p.width > 0 && p.height > 0) {
-    if (window.matchMedia(SIDE_PANEL).matches) pad.left = Math.max(EDGE, p.right - c.left + EDGE)
-    else if (p.bottom - c.top < c.height / 2) pad.top = Math.max(EDGE, p.bottom - c.top + 16)
-  }
-  return clampPadding(pad, c.width, c.height)
 }
 
 /**

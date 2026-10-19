@@ -4,6 +4,8 @@ export { finderApi as exploreFinderApi } from "./api/finder.api"
 export * from "./entities/finder.entity"
 export { FinderPage as ExploreFinderPage } from "./components/finder-page"
 export { ExplorePanel } from "./components/explore-panel"
+export { FinderBackdrop } from "./components/backdrop" // EXPLORE-FILTERS
 export { exploreFiltersEnabled } from "./lib/flag"
 export { toExploreMarkers } from "./lib/to-explore"
-export { finderPadding, safeFit } from "./lib/camera"
+export { FIT_PADDING, safeFit } from "./lib/camera" // EXPLORE-FILTERS: FIT_PADDING replaces finderPadding
+export { MAP_FRAME, type MapBounds } from "./lib/layout" // EXPLORE-FILTERS

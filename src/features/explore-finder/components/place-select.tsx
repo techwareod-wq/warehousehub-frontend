@@ -1,5 +1,7 @@
 "use client"
 
+// EXPLORE-FILTERS: glass input and popover.
+
 import { useId, useMemo, useState } from "react"
 import { Check, ChevronDown, MapPin, X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -33,7 +35,7 @@ export function PlaceSelect({
 
   return (
     <div className="relative">
-      <MapPin className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/50" />
+      <MapPin className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-white/60" />
       <input
         role="combobox"
         aria-expanded={open}
@@ -68,7 +70,7 @@ export function PlaceSelect({
             e.currentTarget.blur()
           }
         }}
-        className="h-11 w-full rounded-xl border border-white/10 bg-white/5 pr-9 pl-10 text-sm text-white outline-none placeholder:text-white/50 focus:border-[#F5B82E]/60"
+        className="xf-input h-11 w-full rounded-[14px] pr-10 pl-10 text-sm outline-none"
       />
       {value && !open ? (
         <button
@@ -76,22 +78,22 @@ export function PlaceSelect({
           onClick={() => onChange("")}
           aria-label={`Clear place (${value})`}
           title="All places"
-          className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white"
+          className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
         >
           <X className="size-4" />
         </button>
       ) : (
-        <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50" />
+        <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-white/60" />
       )}
       {open && (
         <ul
           id={listId}
           role="listbox"
           aria-label="Cities"
-          className="absolute inset-x-0 top-full z-30 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-site-panel p-1 shadow-2xl"
+          className="xf-popover xf-scroll absolute inset-x-0 top-full z-30 mt-2 max-h-64 overflow-y-auto rounded-2xl p-1.5"
         >
           {shown.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-muted-foreground">{loading ? "Loading…" : "No city matches."}</li>
+            <li className="px-3 py-2 text-sm text-white/70">{loading ? "Loading…" : "No city matches."}</li>
           ) : (
             shown.map((c, i) => (
               <li key={c} role="option" aria-selected={c === value}>
@@ -102,9 +104,9 @@ export function PlaceSelect({
                   onClick={() => pick(c)}
                   onMouseEnter={() => setActive(i)}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm",
-                    i === active ? "bg-white/10 text-white" : "text-white/80",
-                    c === value && "text-[#F5B82E]",
+                    "flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors",
+                    i === active ? "bg-white/10 text-white" : "text-white/85",
+                    c === value && "text-[#f9cc63]",
                   )}
                 >
                   {c}

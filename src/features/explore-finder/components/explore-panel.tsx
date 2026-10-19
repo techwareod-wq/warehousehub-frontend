@@ -1,77 +1,101 @@
 "use client"
 
+// EXPLORE-FILTERS: redesigned as a split layout (filters | cards beside a framed map) in liquid glass,
+// with the cards list following the map's visible area.
+
+import "../explore-finder.css"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Globe, List, Loader2, Map as MapIcon, PanelLeftClose, SlidersHorizontal } from "lucide-react"
-import { Button, Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui"
-import { ErrorState, NativeSelect } from "@/components/common"
+import { ChevronDown, Loader2, PanelLeftClose, SlidersHorizontal } from "lucide-react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui"
+import { ErrorState } from "@/components/common"
 import { useLoad } from "@/core/hooks/use-load"
 import { formatNumber } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { SORT_OPTIONS, type FinderSort, type FinderWarehouse } from "../entities/finder.entity"
+import { inBounds, LEFT_AREA, type MapBounds } from "../lib/layout"
 import { activeFilterCount, finderCities, useFinderSearch } from "../lib/use-finder-search"
 import { useSessionFlag } from "../lib/use-session-flag"
 import { FiltersPanel } from "./filters-panel"
 import { FinderCard } from "./finder-card"
+import { MapOverlay } from "./map-overlay"
 import { CardSkeleton, Notice } from "./result-states"
 
 const NO_RESULTS: FinderWarehouse[] = []
 const COLLAPSED_KEY = "explore-finder:filters-collapsed"
+/** The map reports bounds on every moveend; the list settles on them after this pause. */
+const BOUNDS_DEBOUNCE_MS = 150
 
-function FiltersButton({ count, onClick, className }: { count: number; onClick: () => void; className?: string }) {
+const plural = (n: number, word: string) => `${formatNumber(n)} ${word}${n === 1 ? "" : "s"}`
+const sqftOf = (list: FinderWarehouse[]) => list.reduce((sum, w) => sum + (w.totalSqft > 0 ? w.totalSqft : 0), 0)
+
+function CountBadge({ count }: { count: number }) {
+  if (!count) return null
   return (
-    <Button variant="outline" size="sm" onClick={onClick} className={className}>
-      <SlidersHorizontal /> Filters
-      {count > 0 && (
-        <span className="ml-0.5 inline-flex min-w-4.5 items-center justify-center rounded-full bg-[#F5B82E] px-1 text-[10px] font-bold text-[#05070d]">
-          {count}
-        </span>
-      )}
-    </Button>
+    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F5B82E] px-1.5 text-xs font-bold text-[#0a1220]">
+      {count}
+      <span className="sr-only"> active filters</span>
+    </span>
+  )
+}
+
+function FiltersPill({ count, onClick, className }: { count: number; onClick: () => void; className?: string }) {
+  return (
+    <button type="button" onClick={onClick} className={cn("xf-pill h-9 items-center gap-2 rounded-full px-3.5 text-sm font-medium", className)}>
+      <SlidersHorizontal aria-hidden className="size-4" /> Filters
+      <CountBadge count={count} />
+    </button>
   )
 }
 
 /**
- * The finder as Explore's map-view overlay: filters (collapsible) | results over
- * the left of Explore's own map, which draws the results. Searches every live
- * warehouse until a place is picked. Mobile: a toolbar with a filters drawer and
- * a List / Map toggle.
+ * The finder as Explore's map-view layout. Wide screens: a filters column
+ * (collapsible) and a cards column on the left, Explore's own map framed on the
+ * right with glass controls over it. Below lg: map on top, cards below, filters
+ * in a bottom drawer. The search holds every match (up to the API limit); the
+ * cards show the ones inside the map's visible area unless "Search as I move
+ * the map" is off.
  */
 export function ExplorePanel({
   active,
-  panelRef,
   placeRequest,
+  bounds,
   hoverId,
   onHover,
   selected,
   onSelectCard,
-  mapView,
-  onMapView,
   onResults,
+  onFitAll,
+  onZoom,
+  onLayout,
   onBack,
 }: {
   /** Explore is in map mode. */
   active: boolean
-  /** Explore pads its camera by this element's width. */
-  panelRef: React.Ref<HTMLElement>
   /** Set the Place filter from outside (hero search, globe pin); a new `n` re-applies. */
   placeRequest: { city: string; n: number }
+  /** The map's visible area (updated on every moveend); null until the map has settled once. */
+  bounds: MapBounds | null
   hoverId: string | null
   onHover: (shortId: string | null) => void
   /** The selected warehouse (card or pin click); `n` re-triggers the same id. */
   selected: { id: string; n: number } | null
   onSelectCard: (shortId: string) => void
-  /** Mobile: the map is showing instead of the list. */
-  mapView: boolean
-  onMapView: (map: boolean) => void
-  /** The latest results and the place they are for (kept while a newer search loads). */
-  onResults: (results: FinderWarehouse[], place: string) => void
+  /** The latest results and the place + radius they are for (kept while a newer search loads). */
+  onResults: (results: FinderWarehouse[], scope: string | null) => void
+  /** Frame every result on the map. */
+  onFitAll: () => void
+  onZoom: (delta: 1 | -1) => void
+  /** The left area changed shape (filters collapsed or expanded): the map should resize. */
+  onLayout: () => void
   onBack: () => void
 }) {
   const cities = useLoad(finderCities, [])
   const search = useFinderSearch(placeRequest.city)
-  const { filters, loading, error, result, resultPlace, change, clear, retry } = search
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const { filters, loading, error, result, resultScope, change, clear, retry } = search
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [collapsed, setCollapsed] = useSessionFlag(COLLAPSED_KEY)
+  const [searchAsMove, setSearchAsMove] = useState(true)
+  const [viewBounds, setViewBounds] = useState(bounds)
   const cardRefs = useRef(new Map<string, HTMLElement>())
   const results = useMemo(() => result?.results ?? NO_RESULTS, [result])
   const count = activeFilterCount(filters)
@@ -84,23 +108,44 @@ export function ExplorePanel({
   }
 
   useEffect(() => {
-    onResults(results, resultPlace)
-  }, [results, resultPlace, onResults])
+    onResults(results, resultScope)
+  }, [results, resultScope, onResults])
+
+  useEffect(() => {
+    const t = setTimeout(() => setViewBounds(bounds), BOUNDS_DEBOUNCE_MS)
+    return () => clearTimeout(t)
+  }, [bounds])
+
+  useEffect(() => {
+    onLayout()
+  }, [collapsed, onLayout])
+
+  // Results inside the map's visible area, in the search's sort order.
+  const inView = useMemo(
+    () => (viewBounds ? results.filter((w) => w.loc && inBounds(w.loc, viewBounds)) : results),
+    [results, viewBounds],
+  )
+  const inViewSqft = useMemo(() => sqftOf(inView), [inView])
+  const base = searchAsMove ? inView : results
+  // A clicked pin whose card the area filter hides (a pin on the very edge) shows on top.
+  const pinned = selected && !base.some((w) => w.shortId === selected.id) ? results.find((w) => w.shortId === selected.id) : undefined
+  const list = pinned ? [pinned, ...base] : base
+  const listSqft = searchAsMove ? inViewSqft : sqftOf(results)
 
   // A pin click (or card click) brings its card into view.
   useEffect(() => {
-    if (!selected || mapView) return
-    cardRefs.current.get(selected.id)?.scrollIntoView({ behavior: "smooth", block: "nearest" })
-  }, [selected, mapView])
+    if (!selected) return
+    const frame = requestAnimationFrame(() => cardRefs.current.get(selected.id)?.scrollIntoView({ behavior: "smooth", block: "nearest" }))
+    return () => cancelAnimationFrame(frame)
+  }, [selected])
 
-  const panel = (
-    <FiltersPanel
-      filters={filters}
-      onChange={change}
-      onClear={clear}
-      cities={cities.data ?? []}
-      citiesLoading={cities.status === "loading"}
-    />
+  const filtersForm = (
+    <FiltersPanel filters={filters} onChange={change} cities={cities.data ?? []} citiesLoading={cities.status === "loading"} />
+  )
+  const clearLink = count > 0 && (
+    <button type="button" onClick={clear} className="rounded-md text-sm font-medium text-[#f9cc63] underline-offset-4 hover:underline">
+      Clear filters
+    </button>
   )
 
   let body: React.ReactNode
@@ -111,17 +156,31 @@ export function ExplorePanel({
   } else if (results.length === 0) {
     body = (
       <Notice
-        title="No warehouses match yet"
-        body={result.message || "Try a wider radius, a smaller area or fewer features."}
+        title="No warehouses match these filters"
+        body={result.message || "Try a wider radius, another place or fewer features."}
         action={
-          <Button variant="outline" size="sm" className="mt-2" onClick={clear}>
-            Clear filters
-          </Button>
+          count > 0 && (
+            <button type="button" onClick={clear} className="xf-pill mt-1 h-10 rounded-full px-5 text-sm font-semibold">
+              Clear filters
+            </button>
+          )
+        }
+      />
+    )
+  } else if (list.length === 0) {
+    body = (
+      <Notice
+        title="No matches in this area"
+        body={`${plural(results.length, "warehouse")} ${results.length === 1 ? "matches" : "match"} your filters elsewhere.`}
+        action={
+          <button type="button" onClick={onFitAll} className="xf-pill mt-1 h-10 rounded-full px-5 text-sm font-semibold">
+            Show all on map
+          </button>
         }
       />
     )
   } else {
-    body = results.map((w) => (
+    body = list.map((w) => (
       <FinderCard
         key={w.shortId}
         ref={(el) => {
@@ -136,140 +195,120 @@ export function ExplorePanel({
     ))
   }
 
-  const summary = result ? `${formatNumber(result.total)} warehouses · ${formatNumber(result.totalSqft)} total sqft` : "Loading warehouses…"
-  const spinner = loading && <Loader2 aria-label="Updating results" className="size-3.5 shrink-0 animate-spin text-[#F5B82E]" />
+  const sortSelect = (
+    <label className="flex items-center gap-2 text-xs text-white/70">
+      <span className="max-sm:sr-only">Sort by</span>
+      <span className="relative">
+        <select
+          value={filters.sort}
+          onChange={(e) => change({ sort: e.target.value as FinderSort })}
+          className="xf-input h-9 appearance-none rounded-full pr-8 pl-3.5 text-sm outline-none"
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-white/60" />
+      </span>
+    </label>
+  )
 
   return (
-    <section
-      ref={panelRef}
+    <div
       inert={!active}
-      aria-label="Warehouse finder"
       className={cn(
-        "absolute inset-x-0 top-0 z-10 flex flex-col text-foreground transition-[opacity,translate] duration-500 motion-reduce:transition-none",
-        !mapView && "bottom-0",
-        "lg:inset-x-auto lg:top-4 lg:bottom-4 lg:left-4",
-        !active && "pointer-events-none -translate-x-8 opacity-0",
+        "xf pointer-events-none absolute inset-0 z-10 transition-opacity duration-500 motion-reduce:transition-none",
+        !active && "opacity-0",
       )}
     >
-      {/* Mobile toolbar */}
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-background/95 px-3 py-2.5 backdrop-blur lg:hidden">
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onBack} aria-label="Back to globe">
-            <Globe />
-          </Button>
-          <FiltersButton count={count} onClick={() => setFiltersOpen(true)} />
-        </div>
-        <div className="flex gap-1 rounded-full bg-white/5 p-1 text-xs">
-          {([false, true] as const).map((isMap) => (
-            <button
-              key={String(isMap)}
-              type="button"
-              aria-pressed={mapView === isMap}
-              onClick={() => onMapView(isMap)}
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full px-3 py-1",
-                mapView === isMap ? "bg-[#F5B82E] text-[#05070d]" : "text-white/70 hover:text-white",
-              )}
-            >
-              {isMap ? <MapIcon className="size-3.5" /> : <List className="size-3.5" />} {isMap ? "Map" : "List"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div
-        className={cn(
-          "flex min-h-0 flex-1 overflow-hidden bg-background/95 backdrop-blur lg:rounded-3xl lg:border lg:border-border lg:bg-background/90 lg:shadow-2xl",
-          mapView && "max-lg:hidden",
-        )}
-      >
+      <div className={cn("pointer-events-auto absolute flex gap-3", LEFT_AREA)}>
         {!collapsed && (
-          <aside aria-label="Filters" className="hidden w-[280px] shrink-0 flex-col border-r border-border xl:flex">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <span className="text-xs font-semibold tracking-[0.2em] text-white/70 uppercase">Filters</span>
+          <aside aria-label="Filters" className="xf-glass hidden w-[300px] shrink-0 flex-col overflow-hidden rounded-3xl lg:flex">
+            <div className="flex items-center gap-2 px-5 pt-5 pb-4">
+              <h2 className="text-base font-semibold text-white">Filters</h2>
+              <CountBadge count={count} />
+              <span className="ml-auto">{clearLink}</span>
               <button
                 type="button"
                 onClick={() => setCollapsed(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-white/70 hover:bg-white/5 hover:text-white"
+                aria-label="Collapse filters"
+                title="Collapse filters"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
               >
-                <PanelLeftClose className="size-4" /> Collapse filters
+                <PanelLeftClose className="size-4" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">{panel}</div>
+            <div className="xf-scroll min-h-0 flex-1 overflow-y-auto px-5 pb-6">{filtersForm}</div>
           </aside>
         )}
 
-        <section aria-label="Results" className="flex min-w-0 flex-1 flex-col overflow-y-auto lg:w-[360px] lg:flex-none">
-          <div className="sticky top-0 z-10 flex flex-col gap-2.5 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex min-w-0 flex-col" aria-live="polite">
-                <h2 className="flex items-center gap-2 font-heading text-lg leading-tight tracking-tight">
-                  {result ? `${formatNumber(result.total)} warehouses` : "Loading…"}
-                  {spinner}
+        <section aria-label="Results" className="xf-glass @container flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl">
+          <header className="flex flex-col gap-3 px-5 pt-5 pb-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-col gap-0.5" aria-live="polite">
+                <h2 className="flex items-center gap-2 text-lg leading-tight font-semibold text-white">
+                  {result
+                    ? searchAsMove
+                      ? `${plural(list.length, "warehouse")} in this area`
+                      : `${plural(list.length, "warehouse")} match your filters`
+                    : "Loading warehouses…"}
+                  {loading && result && <Loader2 aria-label="Updating results" className="size-4 shrink-0 animate-spin text-[#f9cc63]" />}
                 </h2>
-                <p className="truncate text-xs text-muted-foreground">
-                  {result ? `${formatNumber(result.totalSqft)} total sqft` : ""}
-                  {resultPlace && result ? ` · in ${resultPlace}` : ""}
-                </p>
+                <p className="text-sm text-white/70">{result ? `${formatNumber(listSqft)} total sqft` : "\u00a0"}</p>
               </div>
-              <Button size="sm" variant="outline" className="hidden shrink-0 lg:inline-flex" onClick={onBack}>
-                <Globe /> Globe
-              </Button>
+              {sortSelect}
             </div>
-            <div className="flex items-center justify-between gap-2">
-              {/* Wide screens: reopen the collapsed column. Narrower: the drawer. */}
-              {collapsed && <FiltersButton count={count} onClick={() => setCollapsed(false)} className="hidden xl:inline-flex" />}
-              <FiltersButton count={count} onClick={() => setFiltersOpen(true)} className="hidden lg:inline-flex xl:hidden" />
-              <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-                Sort by
-                <NativeSelect
-                  aria-label="Sort by"
-                  size="sm"
-                  value={filters.sort}
-                  onChange={(v) => change({ sort: v as FinderSort })}
-                  options={SORT_OPTIONS}
-                />
-              </label>
+            {/* Below lg: the drawer. Wide screens: reopens the collapsed column. */}
+            <div className={cn("flex items-center gap-2", !collapsed && "lg:hidden")}>
+              <FiltersPill count={count} onClick={() => setDrawerOpen(true)} className="inline-flex lg:hidden" />
+              {collapsed && <FiltersPill count={count} onClick={() => setCollapsed(false)} className="hidden lg:inline-flex" />}
             </div>
             {!!error && result && (
-              <p role="alert" className="text-xs text-destructive">
+              <p role="alert" className="text-sm text-red-300">
                 Couldn&apos;t update the results.{" "}
-                <button type="button" onClick={retry} className="underline underline-offset-2">
+                <button type="button" onClick={retry} className="font-medium underline underline-offset-2">
                   Try again
                 </button>
               </p>
             )}
-          </div>
-          <div className={cn("flex flex-col gap-3 p-3 transition-opacity", loading && result && "opacity-70")} onMouseLeave={() => onHover(null)}>
+          </header>
+          <div
+            className={cn(
+              "xf-scroll grid min-h-0 flex-1 auto-rows-max grid-cols-1 gap-4 overflow-y-auto px-5 pb-5 transition-opacity duration-200",
+              collapsed && "lg:@min-[640px]:grid-cols-2",
+              loading && result && "opacity-75",
+            )}
+            onMouseLeave={() => onHover(null)}
+          >
             {body}
           </div>
         </section>
       </div>
 
-      {/* Stat box on the map, beside the panel (desktop) or under the toolbar (mobile map view). */}
-      <div
-        className={cn(
-          "pointer-events-none absolute top-0 left-full ml-4 hidden items-center gap-2 rounded-xl border border-white/10 bg-[#05070d]/80 px-3.5 py-2 text-xs font-medium whitespace-nowrap text-white shadow-lg backdrop-blur-md lg:flex",
-        )}
-      >
-        {summary}
-        {spinner}
-      </div>
-      {mapView && (
-        <div className="pointer-events-none mx-3 mt-2 flex items-center gap-2 self-start rounded-xl border border-white/10 bg-[#05070d]/80 px-3 py-1.5 text-xs text-white backdrop-blur-md lg:hidden">
-          {summary}
-          {spinner}
-        </div>
-      )}
+      <MapOverlay
+        stats={result ? { inView: inView.length, sqft: inViewSqft, total: result.total } : null}
+        loading={loading && !!result}
+        searchAsMove={searchAsMove}
+        onSearchAsMove={setSearchAsMove}
+        onBack={onBack}
+        onZoom={onZoom}
+      />
 
-      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <SheetContent side="left" className="overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Filters</SheetTitle>
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent
+          side="bottom"
+          className="xf xf-drawer xf-popover xf-scroll max-h-[85dvh] overflow-y-auto rounded-t-3xl text-white lg:hidden"
+        >
+          <SheetHeader className="flex-row items-center gap-2 px-5 pt-5 pb-0">
+            <SheetTitle className="text-base font-semibold text-white">Filters</SheetTitle>
+            <CountBadge count={count} />
+            <span className="mr-10 ml-auto">{clearLink}</span>
           </SheetHeader>
-          <div className="px-4 pb-8">{panel}</div>
+          <div className="px-5 pb-8">{filtersForm}</div>
         </SheetContent>
       </Sheet>
-    </section>
+    </div>
   )
 }

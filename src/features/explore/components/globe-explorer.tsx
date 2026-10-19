@@ -19,7 +19,16 @@ import { NativeSelect } from "@/components/common"
 import { browserApi, errorMessage } from "@/core/api"
 import { env } from "@/core/config/env"
 import { formatRate, type FilterCatalog } from "@/features/search"
-import { ExplorePanel, exploreFiltersEnabled, finderPadding, safeFit, toExploreMarkers, type FinderWarehouse } from "@/features/explore-finder" // EXPLORE-FILTERS (remove to uninstall)
+import {
+  ExplorePanel,
+  exploreFiltersEnabled,
+  FinderBackdrop,
+  FIT_PADDING,
+  MAP_FRAME,
+  safeFit,
+  toExploreMarkers,
+  type FinderWarehouse,
+} from "@/features/explore-finder" // EXPLORE-FILTERS (remove to uninstall)
 import { formatAreaSqft } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { exploreApi } from "../api/explore.api"
@@ -174,7 +183,7 @@ function globeView(el: HTMLElement) {
 
 /** Keeps markers clear of the listing panel (side panel on desktop, bottom sheet on mobile). */
 function panelPadding(container: HTMLElement | null, panel: HTMLElement | null): Padding {
-  if (exploreFiltersEnabled) return finderPadding(container, panel) // EXPLORE-FILTERS (remove to uninstall): measured panel overlap, clamped to the canvas
+  if (exploreFiltersEnabled) return { ...FIT_PADDING } // EXPLORE-FILTERS (remove to uninstall): the map has its own column, so pad evenly
   if (isMobile()) return { top: 40, right: 20, left: 20, bottom: Math.round((container?.clientHeight ?? 600) * 0.52) + 20 }
   return { top: 40, right: 40, bottom: 40, left: (panel?.offsetWidth ?? 0) + 48 }
 }
@@ -449,17 +458,21 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
   const [finderPlace, setFinderPlace] = useState({ city: "", n: 0 })
   const [finderResults, setFinderResults] = useState<FinderWarehouse[]>([])
   const [finderSelected, setFinderSelected] = useState<{ id: string; n: number } | null>(null)
-  const [finderMapView, setFinderMapView] = useState(false)
-  const [finderResultPlace, setFinderResultPlace] = useState<string | null>(null)
-  /** The place the map was last framed for; the map refits only when the searched place changes. */
-  const finderFitPlace = useRef<string | null>(null)
+  /** The place + radius the finder's results are for. */
+  const [finderResultScope, setFinderResultScope] = useState<string | null>(null)
+  /** The place + radius the map was last framed for; the map refits only when it changes. */
+  const finderFitScope = useRef<string | null>(null)
   const finderMarkers = useMemo(() => toExploreMarkers(finderResults), [finderResults])
   const finderOn = exploreFiltersEnabled && mode === "map"
   const markers = finderOn ? finderMarkers : filtered
   const highlightId = hoverId ?? (finderOn ? finderSelected?.id : null) ?? ""
-  const onFinderResults = useCallback((list: FinderWarehouse[], place: string) => {
+  const onFinderResults = useCallback((list: FinderWarehouse[], scope: string | null) => {
     setFinderResults(list)
-    setFinderResultPlace(place)
+    setFinderResultScope(scope)
+  }, [])
+  /** The finder's left area changed shape: let the canvas catch up on the next frame. */
+  const onFinderLayout = useCallback(() => {
+    requestAnimationFrame(() => mapRef.current?.resize())
   }, [])
 
   // ---------- Camera ----------
@@ -475,7 +488,7 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     if (!map || !list.length) return
     // EXPLORE-FILTERS (remove to uninstall): the new layout fits through safeFit (clamped padding, never throws).
     if (exploreFiltersEnabled) {
-      return safeFit(map, list, finderPadding(containerRef.current, panelRef.current), { maxZoom: 10, duration: reducedMotion() ? 0 : 1600 }, PROGRAMMATIC)
+      return safeFit(map, list, FIT_PADDING, { maxZoom: 10, duration: reducedMotion() ? 0 : 1600 }, PROGRAMMATIC)
     }
     // EXPLORE-FILTERS (remove to uninstall): guard the old fit too: skip a zero-size canvas, never crash on a failed fit.
     const box = map.getContainer() // EXPLORE-FILTERS (remove to uninstall)
@@ -496,6 +509,8 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     modeRef.current = "map"
     setMode("map")
     setPanelOpen(true)
+    // EXPLORE-FILTERS (remove to uninstall): drop the globe's hero padding, which would push the centre off the narrower map column.
+    if (exploreFiltersEnabled && !fly) mapRef.current?.setPadding(FIT_PADDING)
     if (fly) moveTo({ ...MAP_VIEW, padding: panelPadding(containerRef.current, panelRef.current) })
   }
 
@@ -544,7 +559,6 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
   function pickFinderPlace(c: string) {
     setFinderPlace((p) => ({ city: c, n: p.n + 1 }))
     setFinderSelected(null)
-    setFinderMapView(false)
     enterMap()
   }
 
@@ -556,7 +570,15 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     const map = mapRef.current
     if (!w || !map) return
     moveTo({ center: [w.lng, w.lat], zoom: Math.max(map.getZoom(), 15), padding: panelPadding(containerRef.current, panelRef.current) })
-    if (isMobile()) setFinderMapView(true)
+  }
+
+  // EXPLORE-FILTERS (remove to uninstall): the finder's glass zoom buttons.
+  function zoomFinder(delta: 1 | -1) {
+    const map = mapRef.current
+    if (!map) return
+    const opts = { duration: reducedMotion() ? 0 : 250 }
+    if (delta > 0) map.zoomIn(opts, PROGRAMMATIC)
+    else map.zoomOut(opts, PROGRAMMATIC)
   }
 
   // ---------- Map listeners (always see the latest state) ----------
@@ -580,7 +602,6 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     if (exploreFiltersEnabled) {
       if (modeRef.current === "map") {
         setFinderSelected((s) => ({ id, n: (s?.n ?? 0) + 1 }))
-        setFinderMapView(false)
       } else {
         const g = filtered.find((x) => x.shortId === id)
         if (g?.city) pickFinderPlace(g.city)
@@ -611,6 +632,8 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     let map: MapLibreMap | null = null
     const handleResize = () => onResize()
     window.addEventListener("resize", handleResize)
+    // EXPLORE-FILTERS (remove to uninstall): the finder layout resizes the map's box without a window resize.
+    const observer = exploreFiltersEnabled ? new ResizeObserver(() => map?.resize()) : null
 
     void import("maplibre-gl").then(({ default: lib }) => {
       const container = containerRef.current
@@ -627,6 +650,7 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
       })
       map = m
       mapRef.current = m
+      if (observer) observer.observe(container) // EXPLORE-FILTERS (remove to uninstall)
       m.jumpTo({ padding: view.padding }, PROGRAMMATIC)
       m.addControl(new lib.NavigationControl({ showCompass: false }), "top-right")
       // Fall back to the recoloured OpenFreeMap style only if GIBS fails before serving any tile.
@@ -675,6 +699,7 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     return () => {
       cancelled = true
       window.removeEventListener("resize", handleResize)
+      observer?.disconnect() // EXPLORE-FILTERS (remove to uninstall)
       map?.remove()
       mapRef.current = null
       libRef.current = null
@@ -687,14 +712,14 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     mapRef.current?.getSource<GeoJSONSource>(SOURCE)?.setData(toGeoJSON(markers)) // EXPLORE-FILTERS (remove to uninstall): was `filtered`
   }, [mapReady, markers]) // EXPLORE-FILTERS (remove to uninstall): was `filtered`
 
-  // EXPLORE-FILTERS (remove to uninstall): frame the finder's results when the searched place
-  // changes (first load = every warehouse); other filter changes leave the camera alone.
-  // Resize first (the canvas may just have been shown), then fit on the next frame.
+  // EXPLORE-FILTERS (remove to uninstall): frame the finder's results when the searched place or
+  // radius changes (first load = every warehouse); other filter changes leave the camera alone.
+  // Resize first (the canvas may just have changed size), then fit on the next frame.
   const fitFinder = useEffectEvent(() => {
-    const place = finderResultPlace
-    if (place === null || place === finderFitPlace.current || !finderMarkers.length) return
+    const scope = finderResultScope
+    if (scope === null || scope === finderFitScope.current || !finderMarkers.length) return
     mapRef.current?.resize()
-    if (fitTo(finderMarkers)) finderFitPlace.current = place
+    if (fitTo(finderMarkers)) finderFitScope.current = scope
   })
   useEffect(() => {
     if (!mapReady || !finderOn) return
@@ -747,7 +772,14 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     <div className="relative h-[calc(100dvh-4rem)] min-h-[560px] w-full overflow-hidden" style={{ background: SPACE }}>
       {/* MapLibre's unlayered .maplibregl-map { position: relative } beats Tailwind's layered utilities, so position on a wrapper. */}
       {/* Same cascade issue for the attribution bar, hence the `!` overrides. */}
-      <div className="absolute inset-0 [&_.maplibregl-ctrl-attrib]:bg-[#05070d]/60! [&_.maplibregl-ctrl-attrib]:text-[10px]! [&_.maplibregl-ctrl-attrib]:text-white/50! [&_.maplibregl-ctrl-attrib_a]:text-white/60!">
+      {exploreFiltersEnabled && <FinderBackdrop active={finderOn} /> /* EXPLORE-FILTERS (remove to uninstall) */}
+      <div
+        className={cn(
+          "absolute inset-0 [&_.maplibregl-ctrl-attrib]:bg-[#05070d]/60! [&_.maplibregl-ctrl-attrib]:text-[10px]! [&_.maplibregl-ctrl-attrib]:text-white/50! [&_.maplibregl-ctrl-attrib_a]:text-white/60!",
+          // EXPLORE-FILTERS (remove to uninstall): in map view the canvas is a framed column; the finder draws its own zoom buttons.
+          finderOn && ["xf-frame overflow-hidden rounded-3xl [&_.maplibregl-ctrl-top-right]:hidden", MAP_FRAME],
+        )}
+      >
         <div ref={containerRef} className="size-full" aria-label="Warehouse map" />
       </div>
 
@@ -830,15 +862,16 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
       {exploreFiltersEnabled ? (
         <ExplorePanel
           active={mode === "map"}
-          panelRef={panelRef}
           placeRequest={finderPlace}
+          bounds={bounds}
           hoverId={hoverId}
           onHover={setHoverId}
           selected={finderSelected}
           onSelectCard={selectFinderCard}
-          mapView={finderMapView}
-          onMapView={setFinderMapView}
           onResults={onFinderResults}
+          onFitAll={() => fitTo(finderMarkers)}
+          onZoom={zoomFinder}
+          onLayout={onFinderLayout}
           onBack={enterGlobe}
         />
       ) : (

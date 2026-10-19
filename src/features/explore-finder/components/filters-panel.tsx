@@ -1,7 +1,8 @@
 "use client"
 
-import { NativeSelect } from "@/components/common"
-import { cn } from "@/lib/utils"
+// EXPLORE-FILTERS: redesigned as glass sections (Location, Space, Near, Type, Features).
+
+import { ChevronDown } from "lucide-react"
 import {
   FEATURE_OPTIONS,
   RADIUS_OPTIONS,
@@ -13,10 +14,19 @@ import { PlaceSelect } from "./place-select"
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-2.5">
-      <h3 className="text-[11px] font-semibold tracking-[0.2em] text-white/60 uppercase">{title}</h3>
+    <section className="flex flex-col gap-3" aria-label={title}>
+      <h3 className="text-xs font-semibold tracking-[0.14em] text-white/70 uppercase">{title}</h3>
       {children}
     </section>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs text-white/70">{label}</span>
+      {children}
+    </label>
   )
 }
 
@@ -35,7 +45,7 @@ const NEAR = [
   { key: "nearRail", label: "Railway" },
 ] as const
 
-/** The finder's filters, top to bottom in the sketch's order. */
+/** The finder's filters, grouped into sections. Every change applies at once. */
 export function FiltersPanel({
   filters,
   onChange,
@@ -45,81 +55,88 @@ export function FiltersPanel({
 }: {
   filters: FinderFilters
   onChange: (patch: Partial<FinderFilters>) => void
-  onClear: () => void
+  /** Renders a "Clear filters" link at the bottom (callers with a header put it there instead). */
+  onClear?: () => void
   cities: string[]
   citiesLoading: boolean
 }) {
   return (
     <div className="flex flex-col gap-7">
-      <Section title="Place">
-        <PlaceSelect cities={cities} value={filters.place} onChange={(place) => onChange({ place })} loading={citiesLoading} />
+      <Section title="Location">
+        <Field label="Place">
+          <PlaceSelect cities={cities} value={filters.place} onChange={(place) => onChange({ place })} loading={citiesLoading} />
+        </Field>
+        <Field label="Radius">
+          <span className="relative">
+            <select
+              value={String(filters.radiusKm)}
+              onChange={(e) => onChange({ radiusKm: Number(e.target.value) })}
+              disabled={!filters.place}
+              className="xf-input h-11 w-full appearance-none rounded-[14px] pr-10 pl-4 text-sm outline-none"
+            >
+              {RADIUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-white/60" />
+          </span>
+          {!filters.place && <span className="text-xs text-white/60">Pick a place to search around it.</span>}
+        </Field>
       </Section>
 
-      <Section title="Storage need">
-        <div className="flex gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            aria-label={filters.unit === "pallets" ? "Pallets needed" : "Area needed in sq ft"}
-            placeholder={filters.unit === "pallets" ? "e.g. 500" : "e.g. 20000"}
-            value={filters.amount ?? ""}
-            onChange={(e) => {
-              const v = e.target.valueAsNumber
-              onChange({ amount: Number.isFinite(v) && v > 0 ? v : null })
-            }}
-            className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 text-sm text-white outline-none placeholder:text-white/40 focus:border-[#F5B82E]/60"
-          />
-          <div role="radiogroup" aria-label="Unit" className="flex shrink-0 rounded-xl border border-white/10 bg-white/5 p-1">
-            {UNITS.map((u) => (
-              <button
-                key={u.value}
-                type="button"
-                role="radio"
-                aria-checked={filters.unit === u.value}
-                onClick={() => onChange({ unit: u.value })}
-                className={cn(
-                  "rounded-lg px-3 text-xs font-semibold transition-colors",
-                  filters.unit === u.value ? "bg-[#F5B82E] text-[#05070d]" : "text-white/60 hover:text-white",
-                )}
-              >
-                {u.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </Section>
-
-      <Section title="Radius">
-        <NativeSelect
-          aria-label="Radius"
-          value={String(filters.radiusKm)}
-          onChange={(v) => onChange({ radiusKm: Number(v) })}
-          options={RADIUS_OPTIONS}
-          className="w-full"
-          disabled={!filters.place}
-        />
-        {!filters.place && <p className="text-[11px] text-white/45">Pick a place to search around it.</p>}
+      <Section title="Space">
+        <Field label="Storage need">
+          <span className="flex gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              placeholder={filters.unit === "pallets" ? "e.g. 500" : "e.g. 20000"}
+              value={filters.amount ?? ""}
+              onChange={(e) => {
+                const v = e.target.valueAsNumber
+                onChange({ amount: Number.isFinite(v) && v > 0 ? v : null })
+              }}
+              className="xf-input h-11 min-w-0 flex-1 rounded-[14px] px-4 text-sm outline-none"
+            />
+            <span role="radiogroup" aria-label="Unit" className="xf-seg flex shrink-0 gap-0.5 rounded-full p-1">
+              {UNITS.map((u) => (
+                <button
+                  key={u.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={filters.unit === u.value}
+                  onClick={() => onChange({ unit: u.value })}
+                  className="rounded-full px-3 text-xs font-semibold"
+                >
+                  {u.label}
+                </button>
+              ))}
+            </span>
+          </span>
+        </Field>
       </Section>
 
       <Section title="Near">
-        <div className="flex flex-wrap gap-x-5 gap-y-2">
+        <div className="flex flex-wrap gap-2">
           {NEAR.map((n) => (
-            <label key={n.key} className="flex cursor-pointer items-center gap-2 text-sm text-white/85">
-              <input
-                type="checkbox"
-                className="size-4 accent-[#F5B82E]"
-                checked={filters[n.key]}
-                onChange={(e) => onChange({ [n.key]: e.target.checked })}
-              />
+            <button
+              key={n.key}
+              type="button"
+              aria-pressed={filters[n.key]}
+              onClick={() => onChange({ [n.key]: !filters[n.key] })}
+              className="xf-pill h-9 rounded-full px-4 text-sm font-medium"
+            >
               {n.label}
-            </label>
+            </button>
           ))}
         </div>
       </Section>
 
       <Section title="Type">
-        <div className="grid grid-cols-3 gap-2">
+        <div role="group" aria-label="Warehouse type" className="xf-seg grid grid-cols-3 gap-0.5 rounded-full p-1">
           {TYPE_OPTIONS.map((t) => {
             const on = filters.type === t.value
             return (
@@ -127,11 +144,9 @@ export function FiltersPanel({
                 key={t.value}
                 type="button"
                 aria-pressed={on}
+                title={on ? "Tap again to clear" : undefined}
                 onClick={() => onChange({ type: on ? "" : t.value })}
-                className={cn(
-                  "h-12 rounded-xl border text-sm font-semibold transition-colors",
-                  on ? "border-[#F5B82E] bg-[#F5B82E] text-[#05070d]" : "border-white/10 bg-white/5 text-white/80 hover:border-white/25",
-                )}
+                className="h-9 rounded-full text-sm font-semibold"
               >
                 {t.label}
               </button>
@@ -142,33 +157,29 @@ export function FiltersPanel({
 
       <Section title="Features">
         <div className="flex flex-wrap gap-2">
-          {FEATURE_OPTIONS.map((f) => {
-            const on = filters.features.includes(f.value)
-            return (
-              <button
-                key={f.value}
-                type="button"
-                aria-pressed={on}
-                onClick={() => onChange({ features: toggle(filters.features, f.value) })}
-                className={cn(
-                  "rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
-                  on ? "border-[#F5B82E] bg-[#F5B82E] text-[#05070d]" : "border-white/15 bg-white/5 text-white/80 hover:border-white/30",
-                )}
-              >
-                {f.label}
-              </button>
-            )
-          })}
+          {FEATURE_OPTIONS.map((f) => (
+            <button
+              key={f.value}
+              type="button"
+              aria-pressed={filters.features.includes(f.value)}
+              onClick={() => onChange({ features: toggle(filters.features, f.value) })}
+              className="xf-pill rounded-full px-3.5 py-1.5 text-sm"
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
       </Section>
 
-      <button
-        type="button"
-        onClick={onClear}
-        className="self-start text-sm font-medium text-[#F5B82E] underline-offset-4 hover:underline"
-      >
-        Clear filters
-      </button>
+      {onClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="self-start rounded-md text-sm font-medium text-[#f9cc63] underline-offset-4 hover:underline"
+        >
+          Clear filters
+        </button>
+      )}
     </div>
   )
 }

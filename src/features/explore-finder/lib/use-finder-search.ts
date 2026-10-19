@@ -12,6 +12,8 @@ interface Settled {
   key: string
   /** The place the result is for ("" = every live warehouse). */
   place: string
+  /** EXPLORE-FILTERS: place + radius the result is for; the camera refits only when this changes. */
+  scope: string
   result?: FinderSearchResult
   error?: unknown
 }
@@ -27,6 +29,11 @@ export function activeFilterCount(f: FinderFilters): number {
     (f.nearRail ? 1 : 0) +
     f.features.length
   )
+}
+
+/** EXPLORE-FILTERS: radius only matters around a place. */
+function scopeOf(f: FinderFilters): string {
+  return f.place ? `${f.place}|${f.radiusKm}` : ""
 }
 
 /**
@@ -49,11 +56,12 @@ export function useFinderSearch(initialPlace = "") {
   useEffect(() => {
     const key = JSON.stringify([debounced, retry])
     const place = debounced.place
+    const scope = scopeOf(debounced) // EXPLORE-FILTERS
     const ctrl = new AbortController()
     api.search(debounced, ctrl.signal).then(
-      (result) => setSettled({ key, place, result }),
+      (result) => setSettled({ key, place, scope, result }), // EXPLORE-FILTERS: + scope
       (error: unknown) => {
-        if (!ctrl.signal.aborted) setSettled((s) => ({ key, place: s?.place ?? "", result: s?.result, error }))
+        if (!ctrl.signal.aborted) setSettled((s) => ({ key, place: s?.place ?? "", scope: s?.scope ?? "", result: s?.result, error })) // EXPLORE-FILTERS: + scope
       },
     )
     return () => ctrl.abort()
@@ -68,9 +76,11 @@ export function useFinderSearch(initialPlace = "") {
     result: settled?.result ?? null,
     /** The place `result` is for. */
     resultPlace: settled?.place ?? "",
+    /** EXPLORE-FILTERS: the place + radius `result` is for (null before the first result). */
+    resultScope: settled?.scope ?? null,
     change: (patch: Partial<FinderFilters>) => setFilters((f) => ({ ...f, ...patch })),
-    /** Resets every filter but the place and sort. */
-    clear: () => setFilters((f) => ({ ...EMPTY_FILTERS, place: f.place, sort: f.sort })),
+    /** EXPLORE-FILTERS: resets every filter, place included (it is counted as one); keeps the sort. */
+    clear: () => setFilters((f) => ({ ...EMPTY_FILTERS, sort: f.sort })),
     retry: () => setRetry((r) => r + 1),
   }
 }

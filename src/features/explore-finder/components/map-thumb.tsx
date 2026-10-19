@@ -1,5 +1,7 @@
 "use client"
 
+// EXPLORE-FILTERS: 12px minimum text.
+
 import { useEffect, useRef, useState } from "react"
 import { MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -54,7 +56,7 @@ export function MapThumb({ point, className }: { point: LatLng | null; className
           strokeWidth={1.5}
         />
       ) : (
-        <span className="absolute inset-0 flex items-center justify-center text-[11px] text-muted-foreground">No location</span>
+        <span className="absolute inset-0 flex items-center justify-center text-xs text-white/70">No location</span>
       )}
     </div>
   )

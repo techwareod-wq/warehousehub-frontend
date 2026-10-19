@@ -1,5 +1,6 @@
 "use client"
 
+import "../explore-finder.css" // EXPLORE-FILTERS: the card and filters use the glass classes
 import { useEffect, useRef, useState } from "react"
 import { List, Map as MapIcon, SlidersHorizontal } from "lucide-react"
 import { Button, Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui"
