@@ -17,7 +17,9 @@ import {
 import { Reveal } from "@/components/site/reveal"
 import { Eyebrow, SectionIntro } from "@/components/site/section-heading"
 import { CONTACT } from "@/core/config/brand"
+import { env } from "@/core/config/env"
 import { ClusterCard } from "@/features/clusters"
+import { HomeSearchBar } from "@/features/home-search"
 import { loadClusterOverview } from "@/features/clusters/lib/server-clusters"
 import { HomeMap } from "@/features/search"
 import { loadFilterCatalog } from "@/features/search/lib/server-catalog"
@@ -295,12 +297,6 @@ function Hero({ canSearch, canEnquire }: { canSearch: boolean; canEnquire: boole
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-site-ink via-site-ink/30 to-transparent" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-6 pt-32 pb-20 sm:px-8 sm:pt-36 lg:px-12 lg:pb-28">
-        <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/30 px-4 py-1.5 backdrop-blur-md">
-          <span aria-hidden className="size-1.5 animate-pulse rounded-full bg-site-blue" />
-          <span className="font-heading text-[10px] font-medium tracking-[0.25em] text-slate-200/90 uppercase sm:text-xs">
-            Verified warehousing across India
-          </span>
-        </p>
         <h1 className="font-heading text-5xl leading-[1.02] font-bold tracking-tight text-balance text-white/95 uppercase sm:text-7xl lg:text-8xl">
           Find{" "}
           <span className="text-site-blue drop-shadow-[0_0_25px_rgba(59,130,246,0.3)]">warehouse space</span>
@@ -309,25 +305,40 @@ function Hero({ canSearch, canEnquire }: { canSearch: boolean; canEnquire: boole
           Search verified industrial space by location, size, rent and facilities, or tell us what you need and let the Nexus engine
           match it.
         </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
-          {canSearch && (
-            <Link
-              href="/search"
-              className="group inline-flex items-center rounded-lg border border-white/30 bg-white/15 px-8 py-4 font-heading text-sm font-semibold tracking-widest text-white uppercase shadow-md backdrop-blur-md transition-[background-color,transform] duration-300 hover:scale-[1.02] hover:bg-white/25"
-            >
-              Explore warehouses
-              <ArrowRight aria-hidden className="ml-2 size-4 opacity-80 transition-transform group-hover:translate-x-1" />
-            </Link>
-          )}
-          {canEnquire && (
-            <Link
-              href="/enquire"
-              className="inline-flex items-center rounded-lg border border-white/15 bg-white/[0.04] px-6 py-4 font-heading text-sm font-semibold tracking-widest text-white/90 uppercase backdrop-blur-md transition-colors hover:bg-white/10"
-            >
-              Tell us what you need
-            </Link>
-          )}
-        </div>
+        {env.aiSearchEnabled ? (
+          <div className="mt-8 flex w-full flex-col items-center gap-4 sm:mt-10">
+            <HomeSearchBar />
+            {canSearch && (
+              <Link
+                href="/search"
+                className="group inline-flex items-center gap-1.5 font-heading text-xs font-semibold tracking-widest text-white/70 uppercase transition-colors hover:text-white"
+              >
+                Explore warehouses
+                <ArrowRight aria-hidden className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
+            {canSearch && (
+              <Link
+                href="/search"
+                className="group inline-flex items-center rounded-lg border border-white/30 bg-white/15 px-8 py-4 font-heading text-sm font-semibold tracking-widest text-white uppercase shadow-md backdrop-blur-md transition-[background-color,transform] duration-300 hover:scale-[1.02] hover:bg-white/25"
+              >
+                Explore warehouses
+                <ArrowRight aria-hidden className="ml-2 size-4 opacity-80 transition-transform group-hover:translate-x-1" />
+              </Link>
+            )}
+            {canEnquire && (
+              <Link
+                href="/enquire"
+                className="inline-flex items-center rounded-lg border border-white/15 bg-white/[0.04] px-6 py-4 font-heading text-sm font-semibold tracking-widest text-white/90 uppercase backdrop-blur-md transition-colors hover:bg-white/10"
+              >
+                Tell us what you need
+              </Link>
+            )}
+          </div>
+        )}
 
         <ul className="mt-12 grid w-full max-w-4xl grid-cols-1 gap-3.5 text-left sm:mt-14 sm:grid-cols-3 sm:gap-4">
           {TYPES.map((t) => {
