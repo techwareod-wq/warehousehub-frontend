@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
 import { ArrowRight, Loader2, Search } from "lucide-react"
+import { GlassButton, GlassInput, glassSurface } from "@/components/glass"
 import { useSiteFeature } from "@/features/users"
 import { cn } from "@/lib/utils"
 import { aiSearchHref, MAX_QUERY_CHARS } from "../lib/examples"
@@ -64,51 +65,54 @@ export function HomeSearchBar() {
         onMouseLeave={() => setHovered(false)}
         onAnimationEnd={(e) => e.animationName === "hs-shake" && setShake(false)}
         data-shake={shake || undefined}
-        className="hs-bar relative flex h-14 w-full max-w-[720px] items-center gap-2 rounded-full pr-1.5 pl-5 sm:h-16 sm:pr-2 sm:pl-6"
+        className="hs-form relative w-full max-w-[720px]"
       >
-        <Search aria-hidden className="size-5 shrink-0 text-white/60" />
-        <div className="relative h-full min-w-0 flex-1">
-          <input
-            ref={inputRef}
-            type="text"
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value)
-              setNotice(false)
-            }}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            maxLength={MAX_QUERY_CHARS}
-            aria-label="Describe the warehouse you need"
-            autoComplete="off"
-            enterKeyHint="search"
-            className="size-full bg-transparent text-left text-base text-white outline-none sm:text-lg"
-          />
-          {empty && (
-            <span aria-hidden className={cn("hs-ph pointer-events-none absolute inset-0 overflow-hidden", focused && "hs-ph-dim")}>
-              {previous && (
-                <span key={`out-${tick}`} className="hs-ph-line hs-ph-out">
-                  {previous}
-                </span>
-              )}
-              <span key={`in-${tick}`} className={cn("hs-ph-line", previous && "hs-ph-in")}>
-                {current}
+        <GlassInput
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value)
+            setNotice(false)
+          }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          maxLength={MAX_QUERY_CHARS}
+          aria-label="Describe the warehouse you need"
+          autoComplete="off"
+          enterKeyHint="search"
+          className="hs-input h-14 rounded-full pr-16 pl-12 text-left text-base sm:h-16 sm:pr-[4.5rem] sm:pl-14 sm:text-lg"
+        />
+        <Search aria-hidden className="pointer-events-none absolute top-1/2 left-4.5 size-5 -translate-y-1/2 text-glass-text-3 sm:left-5" />
+        {empty && (
+          <span
+            aria-hidden
+            className={cn("hs-ph pointer-events-none absolute inset-y-0 right-16 left-12 overflow-hidden text-left sm:right-[4.5rem] sm:left-14", focused && "hs-ph-dim")}
+          >
+            {previous && (
+              <span key={`out-${tick}`} className="hs-ph-line hs-ph-out">
+                {previous}
               </span>
+            )}
+            <span key={`in-${tick}`} className={cn("hs-ph-line", previous && "hs-ph-in")}>
+              {current}
             </span>
-          )}
-        </div>
-        <button
+          </span>
+        )}
+        <GlassButton
           type="submit"
+          variant="primary"
+          size="icon"
           aria-label="Search"
           aria-busy={pending || undefined}
           disabled={pending}
-          className="hs-go flex size-11 shrink-0 items-center justify-center rounded-full sm:size-12"
+          className="absolute top-1/2 right-1.5 size-11 -translate-y-1/2 sm:right-2 sm:size-12"
         >
           {pending ? <Loader2 aria-hidden className="size-5 animate-spin" /> : <ArrowRight aria-hidden className="size-5" />}
-        </button>
+        </GlassButton>
       </form>
       {notice && (
-        <p role="status" className="hs-notice mt-3 rounded-full px-4 py-2 text-sm text-white/90">
+        <p role="status" className={cn(glassSurface({ level: "strong" }), "mt-3 rounded-full px-4 py-2 text-sm text-glass-text-2")}>
           AI search is not enabled for your account yet.
         </p>
       )}

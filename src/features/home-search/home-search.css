@@ -1,62 +1,33 @@
-/* The home hero's search bar: the same "liquid glass" as /explore
-   (explore-finder.css), Nexus gold accent. Plain, unlayered CSS so every
-   state lives here; layout stays in Tailwind. */
+/* The home hero's search bar. Surfaces come from the glass system
+   (GlassInput / GlassButton, globals.css); this only adds what a hero-sized
+   bar needs: frosting over the hero, a stronger gold glow on focus, the
+   rotating placeholder and the empty-submit shake. */
 
-.hs-bar {
-  --hs-gold: var(--gl-gold, #f5b82e);
-  --hs-ease: var(--gl-ease, 180ms cubic-bezier(0.2, 0.8, 0.2, 1));
-  background-color: rgb(255 255 255 / 8%);
-  border: 1px solid rgb(255 255 255 / 18%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 18%),
-    0 12px 40px rgb(0 0 0 / 35%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
-  backdrop-filter: blur(28px) saturate(160%);
-  transition:
-    border-color var(--hs-ease),
-    box-shadow var(--hs-ease),
-    background-color var(--hs-ease);
+.hs-input {
+  background-color: var(--gl-surface);
+  box-shadow: var(--gl-highlight), var(--gl-shadow);
+  -webkit-backdrop-filter: var(--gl-blur);
+  backdrop-filter: var(--gl-blur);
 }
-.hs-bar:hover {
-  background-color: rgb(255 255 255 / 10%);
+.hs-input:hover:not(:disabled) {
+  background-color: var(--gl-surface-hover);
 }
-.hs-bar:focus-within {
-  border-color: rgb(245 184 46 / 60%);
+.hs-input:focus {
+  background-color: var(--gl-surface-hover);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 18%),
+    var(--gl-highlight),
     0 0 0 3px rgb(245 184 46 / 18%),
     0 0 36px rgb(245 184 46 / 22%),
-    0 12px 40px rgb(0 0 0 / 35%);
+    var(--gl-shadow);
 }
-.hs-bar[data-shake] {
+.hs-form[data-shake] {
   animation: hs-shake 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
-}
-
-.hs-go {
-  background: linear-gradient(135deg, #f9cc63, var(--hs-gold));
-  color: #0a1220;
-  box-shadow: 0 4px 16px rgb(245 184 46 / 35%);
-  transition:
-    transform var(--hs-ease),
-    box-shadow var(--hs-ease);
-}
-.hs-go:hover:not(:disabled) {
-  transform: scale(1.05);
-  box-shadow: 0 6px 22px rgb(245 184 46 / 50%);
-}
-.hs-go:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-}
-.hs-go:disabled {
-  cursor: progress;
-  opacity: 0.85;
 }
 
 /* Rotating placeholder (aria-hidden overlay over the input). */
 .hs-ph {
-  color: rgb(255 255 255 / 55%);
-  transition: opacity var(--hs-ease);
+  color: rgb(255 255 255 / 60%);
+  transition: opacity var(--gl-ease);
 }
 .hs-ph-dim {
   opacity: 0.6;
@@ -82,13 +53,6 @@
 }
 .hs-ph-out {
   animation: hs-ph-out 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-.hs-notice {
-  background-color: rgb(14 22 40 / 70%);
-  border: 1px solid rgb(245 184 46 / 35%);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
 }
 
 @keyframes hs-ph-in {
@@ -131,13 +95,25 @@
   }
 }
 
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hs-input {
+    background-color: var(--gl-solid);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .hs-input {
+    background-color: var(--gl-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .hs-bar,
-  .hs-go,
   .hs-ph {
     transition: none;
   }
-  .hs-bar[data-shake],
+  .hs-form[data-shake],
   .hs-ph-in,
   .hs-ph-out {
     animation: none;
