@@ -2,13 +2,15 @@
    Plain, unlayered CSS: it wins over Tailwind's layered utilities, so every
    state of a surface (hover, on, focus) lives here, and layout stays in Tailwind. */
 
+/* The values are the site's liquid-glass tokens (globals.css, .site); the
+   fallbacks keep them identical where .site isn't an ancestor. */
 .xf {
-  --xf-navy: #0a1220;
-  --xf-solid: #131d31;
-  --xf-gold: #f5b82e;
-  --xf-gold-text: #f9cc63;
-  --xf-line: rgb(255 255 255 / 14%);
-  --xf-ease: 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --xf-navy: var(--gl-navy, #0a1220);
+  --xf-solid: var(--gl-solid, #131d31);
+  --xf-gold: var(--gl-gold, #f5b82e);
+  --xf-gold-text: var(--gl-gold-text, #f9cc63);
+  --xf-line: var(--gl-border, rgb(255 255 255 / 14%));
+  --xf-ease: var(--gl-ease, 180ms cubic-bezier(0.2, 0.8, 0.2, 1));
   color: #fff;
 }
 

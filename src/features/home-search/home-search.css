@@ -3,8 +3,8 @@
    state lives here; layout stays in Tailwind. */
 
 .hs-bar {
-  --hs-gold: #f5b82e;
-  --hs-ease: 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --hs-gold: var(--gl-gold, #f5b82e);
+  --hs-ease: var(--gl-ease, 180ms cubic-bezier(0.2, 0.8, 0.2, 1));
   background-color: rgb(255 255 255 / 8%);
   border: 1px solid rgb(255 255 255 / 18%);
   box-shadow:

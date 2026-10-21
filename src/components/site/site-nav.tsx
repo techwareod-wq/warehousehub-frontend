@@ -4,13 +4,15 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
+import { GlassNav, GlassNavLink, glassButton, glassSurface } from "@/components/glass"
 import { cn } from "@/lib/utils"
 import { Wordmark } from "./wordmark"
 
 /**
- * The site bar. On the home page it floats transparent over the hero and
- * turns solid once the visitor scrolls; everywhere else it is a solid sticky
- * h-16 bar (the explore map sizes itself to 100dvh − 4rem).
+ * The site bar: a floating glass bar inset from the screen edge. On the home
+ * page it floats over the hero (fixed, roomier until the visitor scrolls);
+ * everywhere else it is sticky and the header stays exactly h-16 (the
+ * explore map sizes itself to 100dvh − 4rem). Scrolling raises the glass.
  */
 export function SiteNav({
   canSearch,
@@ -44,86 +46,77 @@ export function SiteNav({
     { href: "/account", label: "Account", show: signedIn },
   ].filter((t) => t.show)
 
-  const solid = !home || scrolled || open
   const roomy = home && !scrolled
 
   return (
     <header
       className={cn(
-        "inset-x-0 top-0 z-40 border-b transition-[background-color,border-color,box-shadow] duration-300",
+        "inset-x-0 top-0 z-40 flex items-center px-3 transition-[height] duration-300 sm:px-4",
         home ? "fixed" : "sticky",
-        solid ? "border-white/10 bg-site-nav/85 shadow-lg backdrop-blur-md" : "border-transparent bg-transparent",
+        roomy ? "h-20 lg:h-24" : "h-16",
       )}
     >
-      <div
-        className={cn(
-          "mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 transition-[height] duration-300 sm:px-8 lg:px-12",
-          roomy ? "h-20 lg:h-24" : "h-16",
-        )}
-      >
-        <Link href="/" className="rounded-md py-1 transition-opacity hover:opacity-90" aria-label="Nexus home">
-          <Wordmark />
-        </Link>
-
-        <nav aria-label="Main" className="hidden items-center gap-7 md:flex lg:gap-9">
-          {tabs.map((t) => {
-            const on = pathname.startsWith(t.href)
-            return (
-              <Link
-                key={t.href}
-                href={t.href}
-                aria-current={on ? "page" : undefined}
-                className={cn(
-                  "text-[11px] font-semibold tracking-[0.18em] uppercase transition-colors lg:text-xs",
-                  on ? "text-site-cyan" : "text-white/80 hover:text-white",
-                )}
-              >
-                {t.label}
-              </Link>
-            )
-          })}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          {actions}
-          <button
-            type="button"
-            onClick={() => setOpen((o) => !o)}
-            aria-expanded={open}
-            aria-controls="site-mobile-menu"
-            aria-label={open ? "Close menu" : "Open menu"}
-            className="rounded-lg border border-white/10 bg-white/5 p-2 text-white transition-colors hover:bg-white/10 md:hidden"
-          >
-            {open ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
-        </div>
-      </div>
-
-      {open && (
-        <nav
-          id="site-mobile-menu"
-          aria-label="Main"
-          className="mx-4 mb-4 flex flex-col gap-1 rounded-2xl border border-white/10 bg-site-ink/95 p-4 shadow-2xl backdrop-blur-2xl animate-in fade-in duration-200 md:hidden"
+      {/* The bar and the mobile sheet are siblings: a blur nested in a blur only sees its parent. */}
+      <div className="relative mx-auto w-full max-w-7xl">
+        <GlassNav
+          raised={scrolled || open}
+          className="flex h-12 w-full items-center justify-between gap-4 rounded-full pr-2 pl-4 sm:pl-5"
         >
-          {tabs.map((t) => {
-            const on = pathname.startsWith(t.href)
-            return (
-              <Link
+          <Link href="/" className="gl-focus rounded-full py-1 transition-opacity hover:opacity-90" aria-label="Nexus home">
+            <Wordmark />
+          </Link>
+
+          <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
+            {tabs.map((t) => (
+              <GlassNavLink
                 key={t.href}
                 href={t.href}
-                aria-current={on ? "page" : undefined}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "rounded-lg px-2 py-2.5 text-xs font-semibold tracking-[0.15em] uppercase transition-colors",
-                  on ? "text-site-cyan" : "text-white/80 hover:bg-white/5 hover:text-white",
-                )}
+                active={pathname.startsWith(t.href)}
+                className="px-3.5 py-1.5 text-xs font-semibold tracking-[0.16em] whitespace-nowrap uppercase"
               >
                 {t.label}
-              </Link>
-            )
-          })}
-        </nav>
-      )}
+              </GlassNavLink>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            {actions}
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              aria-expanded={open}
+              aria-controls="site-mobile-menu"
+              aria-label={open ? "Close menu" : "Open menu"}
+              className={glassButton({ variant: "ghost", size: "icon", className: "size-9 lg:hidden" })}
+            >
+              {open ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
+        </GlassNav>
+
+        {open && (
+          <nav
+            id="site-mobile-menu"
+            aria-label="Main"
+            className={cn(
+              glassSurface({ level: "strong" }),
+              "gl-panel absolute inset-x-0 top-full mt-2 flex flex-col gap-1 p-3 animate-in fade-in slide-in-from-top-1 duration-200 lg:hidden",
+            )}
+          >
+            {tabs.map((t) => (
+              <GlassNavLink
+                key={t.href}
+                href={t.href}
+                active={pathname.startsWith(t.href)}
+                onClick={() => setOpen(false)}
+                className="rounded-[14px] px-3 py-2.5 text-xs font-semibold tracking-[0.15em] uppercase"
+              >
+                {t.label}
+              </GlassNavLink>
+            ))}
+          </nav>
+        )}
+      </div>
     </header>
   )
 }

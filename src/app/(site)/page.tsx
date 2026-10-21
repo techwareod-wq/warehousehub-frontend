@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { Reveal } from "@/components/site/reveal"
 import { Eyebrow, SectionIntro } from "@/components/site/section-heading"
+import { GlassButtonLink, glassSurface } from "@/components/glass"
 import { CONTACT } from "@/core/config/brand"
 import { env } from "@/core/config/env"
 import { ClusterCard } from "@/features/clusters"
@@ -321,21 +322,15 @@ function Hero({ canSearch, canEnquire }: { canSearch: boolean; canEnquire: boole
         ) : (
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
             {canSearch && (
-              <Link
-                href="/search"
-                className="group inline-flex items-center rounded-lg border border-white/30 bg-white/15 px-8 py-4 font-heading text-sm font-semibold tracking-widest text-white uppercase shadow-md backdrop-blur-md transition-[background-color,transform] duration-300 hover:scale-[1.02] hover:bg-white/25"
-              >
+              <GlassButtonLink href="/search" variant="primary" size="lg" className="group font-heading tracking-widest uppercase">
                 Explore warehouses
-                <ArrowRight aria-hidden className="ml-2 size-4 opacity-80 transition-transform group-hover:translate-x-1" />
-              </Link>
+                <ArrowRight aria-hidden className="size-4 transition-transform group-hover:translate-x-1" />
+              </GlassButtonLink>
             )}
             {canEnquire && (
-              <Link
-                href="/enquire"
-                className="inline-flex items-center rounded-lg border border-white/15 bg-white/[0.04] px-6 py-4 font-heading text-sm font-semibold tracking-widest text-white/90 uppercase backdrop-blur-md transition-colors hover:bg-white/10"
-              >
+              <GlassButtonLink href="/enquire" variant="secondary" size="lg" className="font-heading tracking-widest uppercase">
                 Tell us what you need
-              </Link>
+              </GlassButtonLink>
             )}
           </div>
         )}
@@ -360,12 +355,12 @@ function Hero({ canSearch, canEnquire }: { canSearch: boolean; canEnquire: boole
                 </div>
               </>
             )
-            const cls =
-              "group flex h-full flex-col justify-between rounded-xl border border-white/15 bg-white/[0.06] p-4 backdrop-blur-md transition-[transform,background-color] duration-300 sm:p-5"
+            // Three tiles, so each can carry its own blur (lists use gl-plain instead).
+            const cls = cn(glassSurface(), "group flex h-full flex-col justify-between rounded-[20px] p-4 sm:p-5")
             return (
               <li key={t.name}>
                 {canSearch ? (
-                  <Link href="/search" className={cn(cls, "hover:scale-[1.02] hover:bg-white/10")}>
+                  <Link href="/search" className={cn(cls, "gl-lift gl-gold-edge gl-focus")}>
                     {body}
                   </Link>
                 ) : (

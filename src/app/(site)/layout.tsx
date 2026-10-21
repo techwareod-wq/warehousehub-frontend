@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic"
  * the backend for now, so a visitor with no features sees "no access yet".
  * Pages check their own feature (getSiteAccess is shared per request).
  * The public site is always dark (the admin panel has its own theme toggle);
- * .site swaps in the public palette and type (globals.css).
+ * .site swaps in the public palette and type, .gl-page the liquid-glass
+ * backdrop (navy with fixed glows, globals.css).
  */
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const access = await getSiteAccess()
@@ -21,7 +22,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const { features, email } = access.profile
   return (
     <SiteAccessProvider features={features}>
-      <div className="dark site flex min-h-full flex-1 flex-col bg-background text-foreground">
+      <div className="dark site gl-page flex min-h-full flex-1 flex-col text-foreground">
         <SiteHeader />
         <main className="flex flex-1 flex-col">{features.length === 0 ? <NoSiteAccess email={email} /> : children}</main>
         <SiteFooter />

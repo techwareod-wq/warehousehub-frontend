@@ -64,6 +64,13 @@
   --color-site-teal-deep: var(--site-teal-deep);
   --color-site-band-from: var(--site-band-from);
   --color-site-band-to: var(--site-band-to);
+  /* Liquid glass (defined under .site below). */
+  --color-glass-navy: var(--gl-navy);
+  --color-glass-gold: var(--gl-gold);
+  --color-glass-gold-text: var(--gl-gold-text);
+  --color-glass-text: var(--gl-text);
+  --color-glass-text-2: var(--gl-text-2);
+  --color-glass-text-3: var(--gl-text-3);
   --animate-ken-burns: ken-burns 28s ease-in-out infinite alternate;
   --animate-drift: drift 18s ease-in-out infinite alternate;
 }
@@ -204,10 +211,314 @@ html:has(.site) {
   --site-teal-deep: #458092;
   --site-band-from: #70b1be;
   --site-band-to: #3a6d7f;
+
+  /* Liquid glass tokens (see the .gl-* classes below). */
+  /* Page */
+  --gl-navy: #0a1220;
+  --gl-glow-blue: rgb(59 130 246 / 18%);
+  --gl-glow-blue-soft: rgb(59 130 246 / 12%);
+  --gl-glow-gold: rgb(245 184 46 / 10%);
+  /* Solid fallbacks (no backdrop-filter / reduced transparency) */
+  --gl-solid: #131d31;
+  --gl-solid-strong: #18243a;
+  /* Surfaces */
+  --gl-surface-subtle: rgb(255 255 255 / 5%);
+  --gl-surface: rgb(255 255 255 / 8%);
+  --gl-surface-strong: rgb(255 255 255 / 12%);
+  --gl-surface-hover: rgb(255 255 255 / 11%);
+  --gl-border: rgb(255 255 255 / 14%);
+  --gl-border-hover: rgb(255 255 255 / 24%);
+  --gl-highlight: inset 0 1px 0 rgb(255 255 255 / 18%);
+  --gl-shadow-sm: 0 6px 20px rgb(0 0 0 / 25%);
+  --gl-shadow: 0 12px 40px rgb(0 0 0 / 35%);
+  --gl-shadow-lift: 0 18px 48px rgb(0 0 0 / 42%);
+  --gl-blur: blur(28px) saturate(160%);
+  /* Radii */
+  --gl-radius-panel: 24px;
+  --gl-radius-input: 14px;
+  --gl-radius-pill: 9999px;
+  /* Gold accent (selected / active / focus) */
+  --gl-gold: #f5b82e;
+  --gl-gold-text: #f9cc63;
+  --gl-gold-surface: rgb(245 184 46 / 22%);
+  --gl-gold-surface-hover: rgb(245 184 46 / 30%);
+  --gl-gold-border: rgb(245 184 46 / 70%);
+  --gl-gold-glow: 0 0 0 1px rgb(245 184 46 / 45%), 0 0 28px rgb(245 184 46 / 16%);
+  /* Text */
+  --gl-text: #fff;
+  --gl-text-2: rgb(255 255 255 / 85%);
+  --gl-text-3: rgb(255 255 255 / 70%);
+  /* Motion */
+  --gl-ease: 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .site {
   font-family: var(--font-jakarta), var(--font-sans), sans-serif;
+}
+
+/* ── Liquid glass ─────────────────────────────────────────────────────────
+   The public site's surface system, lifted from the Explore finder
+   (explore-finder.css): deep Nexus navy, soft blue/gold glows, frosted white
+   surfaces and a gold accent for selected / active states. Components in
+   src/components/glass use these classes; pages can use them directly.
+   Rules: at most two backdrop-filters stacked; repeated list items use
+   .gl-plain (no blur), only their container blurs. The --gl-* tokens sit in
+   the .site palette block above (one rule, so portals get them too). */
+
+@layer components {
+  /* The page: navy with large, soft glows fixed behind everything. */
+  .gl-page {
+    position: relative;
+    isolation: isolate;
+    background-color: var(--gl-navy);
+  }
+  .gl-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(55% 50% at 12% 18%, var(--gl-glow-blue), transparent 70%),
+      radial-gradient(45% 45% at 88% 88%, var(--gl-glow-gold), transparent 70%),
+      radial-gradient(40% 40% at 55% 0%, var(--gl-glow-blue-soft), transparent 70%);
+  }
+
+  /* Surfaces: .gl-surface (default 8%), .gl-subtle (5%), .gl-strong (12%). */
+  .gl-surface {
+    background-color: var(--gl-surface);
+    border: 1px solid var(--gl-border);
+    box-shadow: var(--gl-highlight), var(--gl-shadow);
+    color: var(--gl-text);
+    -webkit-backdrop-filter: var(--gl-blur);
+    backdrop-filter: var(--gl-blur);
+  }
+  .gl-surface.gl-subtle {
+    background-color: var(--gl-surface-subtle);
+  }
+  .gl-surface.gl-strong {
+    background-color: var(--gl-surface-strong);
+  }
+  /* Repeated items inside a blurred container: translucent, no blur. */
+  .gl-surface.gl-plain {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: var(--gl-highlight), var(--gl-shadow-sm);
+  }
+  .gl-panel {
+    border-radius: var(--gl-radius-panel);
+  }
+
+  /* Selected / active: gold-tinted glass. */
+  .gl-gold {
+    background-color: var(--gl-gold-surface);
+    border-color: var(--gl-gold-border);
+    color: var(--gl-gold-text);
+  }
+
+  /* Interaction: 2px lift with a brighter surface; optional gold edge. */
+  .gl-lift {
+    transition:
+      transform var(--gl-ease),
+      background-color var(--gl-ease),
+      border-color var(--gl-ease),
+      box-shadow var(--gl-ease);
+  }
+  .gl-lift:hover {
+    transform: translateY(-2px);
+    background-color: var(--gl-surface-hover);
+    border-color: var(--gl-border-hover);
+    box-shadow: var(--gl-highlight), var(--gl-shadow-lift);
+  }
+  .gl-gold-edge:hover {
+    border-color: var(--gl-gold-border);
+    box-shadow: var(--gl-highlight), var(--gl-gold-glow), var(--gl-shadow-lift);
+  }
+  .gl-focus:focus-visible,
+  .gl-focus-within:focus-within {
+    outline: 2px solid var(--gl-gold);
+    outline-offset: 2px;
+  }
+
+  /* Buttons */
+  .gl-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: var(--gl-radius-pill);
+    font-weight: 600;
+    white-space: nowrap;
+    transition:
+      transform var(--gl-ease),
+      background-color var(--gl-ease),
+      border-color var(--gl-ease),
+      box-shadow var(--gl-ease),
+      color var(--gl-ease),
+      filter var(--gl-ease);
+  }
+  .gl-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+  .gl-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .gl-btn-primary {
+    background: linear-gradient(135deg, var(--gl-gold-text), var(--gl-gold));
+    color: var(--gl-navy);
+    box-shadow: 0 4px 16px rgb(245 184 46 / 30%);
+  }
+  .gl-btn-primary:hover:not(:disabled) {
+    filter: brightness(1.06);
+    box-shadow: 0 8px 24px rgb(245 184 46 / 45%);
+  }
+  .gl-btn-secondary {
+    background-color: var(--gl-surface);
+    border-color: var(--gl-border);
+    box-shadow: var(--gl-highlight), var(--gl-shadow-sm);
+    color: var(--gl-text);
+    -webkit-backdrop-filter: var(--gl-blur);
+    backdrop-filter: var(--gl-blur);
+  }
+  .gl-btn-secondary:hover:not(:disabled) {
+    background-color: var(--gl-surface-strong);
+    border-color: var(--gl-border-hover);
+  }
+  .gl-btn-ghost {
+    background-color: transparent;
+    color: var(--gl-text-2);
+  }
+  .gl-btn-ghost:hover:not(:disabled) {
+    background-color: var(--gl-surface-subtle);
+    color: var(--gl-text);
+  }
+
+  /* Inputs and selects */
+  .gl-input {
+    background-color: rgb(255 255 255 / 6%);
+    border: 1px solid var(--gl-border);
+    border-radius: var(--gl-radius-input);
+    color: var(--gl-text);
+    transition:
+      border-color var(--gl-ease),
+      background-color var(--gl-ease),
+      box-shadow var(--gl-ease);
+  }
+  .gl-input::placeholder {
+    color: rgb(255 255 255 / 60%);
+  }
+  .gl-input:hover:not(:disabled) {
+    border-color: var(--gl-border-hover);
+  }
+  .gl-input:focus {
+    outline: none;
+    border-color: var(--gl-gold-border);
+    background-color: rgb(255 255 255 / 9%);
+    box-shadow: 0 0 0 3px rgb(245 184 46 / 18%);
+  }
+  .gl-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .gl-input option {
+    background-color: var(--gl-solid);
+    color: var(--gl-text);
+  }
+
+  /* Chips */
+  .gl-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background-color: rgb(255 255 255 / 6%);
+    border: 1px solid var(--gl-border);
+    border-radius: var(--gl-radius-pill);
+    color: var(--gl-text-2);
+    transition:
+      background-color var(--gl-ease),
+      border-color var(--gl-ease),
+      color var(--gl-ease);
+  }
+  .gl-chip:hover {
+    background-color: var(--gl-surface-hover);
+    border-color: var(--gl-border-hover);
+    color: var(--gl-text);
+  }
+  .gl-chip[aria-pressed="true"],
+  .gl-chip[data-selected] {
+    background-color: var(--gl-gold-surface);
+    border-color: var(--gl-gold-border);
+    color: var(--gl-gold-text);
+    font-weight: 600;
+  }
+
+  /* Nav: the floating bar and its links. */
+  .gl-nav {
+    transition:
+      background-color var(--gl-ease),
+      box-shadow var(--gl-ease),
+      border-color var(--gl-ease);
+  }
+  .gl-nav[data-raised] {
+    background-color: var(--gl-surface-strong);
+    border-color: var(--gl-border-hover);
+    box-shadow: var(--gl-highlight), var(--gl-shadow-lift);
+  }
+  .gl-nav-link {
+    border: 1px solid transparent;
+    border-radius: var(--gl-radius-pill);
+    color: var(--gl-text-2);
+    transition:
+      background-color var(--gl-ease),
+      border-color var(--gl-ease),
+      color var(--gl-ease);
+  }
+  .gl-nav-link:hover {
+    background-color: var(--gl-surface-subtle);
+    color: var(--gl-text);
+  }
+  .gl-nav-link[aria-current="page"] {
+    background-color: var(--gl-gold-surface);
+    border-color: var(--gl-gold-border);
+    color: var(--gl-gold-text);
+  }
+}
+
+/* No backdrop-filter: solid navy surfaces instead of see-through ones. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .gl-surface,
+  .gl-btn-secondary {
+    background-color: var(--gl-solid);
+  }
+  .gl-surface.gl-strong,
+  .gl-nav[data-raised] {
+    background-color: var(--gl-solid-strong);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .gl-surface,
+  .gl-btn-secondary {
+    background-color: var(--gl-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .gl-surface.gl-strong,
+  .gl-nav[data-raised] {
+    background-color: var(--gl-solid-strong);
+  }
+  .gl-page::before {
+    background-image: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gl-lift:hover,
+  .gl-btn:hover:not(:disabled) {
+    transform: none;
+  }
 }
 
 /* Motion is decoration only: switch it all off for reduced-motion visitors. */
