@@ -36,7 +36,7 @@ const sqftOf = (list: FinderWarehouse[]) => list.reduce((sum, w) => sum + (w.tot
 function CountBadge({ count }: { count: number }) {
   if (!count) return null
   return (
-    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F5B82E] px-1.5 text-xs font-bold text-[#0a1220]">
+    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#3b82f6] px-1.5 text-xs font-bold text-white">
       {count}
       <span className="sr-only"> active filters</span>
     </span>
@@ -161,7 +161,7 @@ export function ExplorePanel({
     <FiltersPanel filters={filters} onChange={change} cities={cities.data ?? []} citiesLoading={cities.status === "loading"} />
   )
   const clearLink = count > 0 && (
-    <button type="button" onClick={clear} className="rounded-md text-sm font-medium text-[#f9cc63] underline-offset-4 hover:underline">
+    <button type="button" onClick={clear} className="rounded-md text-sm font-medium text-[#60a5fa] underline-offset-4 hover:underline">
       Clear all
     </button>
   )
@@ -281,7 +281,7 @@ export function ExplorePanel({
               >
                 <SlidersHorizontal aria-hidden className="size-5" />
                 {count > 0 && (
-                  <span aria-hidden className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F5B82E] px-1 text-xs font-bold text-[#0a1220]">
+                  <span aria-hidden className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#3b82f6] px-1 text-xs font-bold text-white">
                     {count}
                   </span>
                 )}
@@ -301,7 +301,7 @@ export function ExplorePanel({
                       ? `${plural(list.length, "warehouse")} in this area`
                       : `${plural(list.length, "warehouse")} match your filters`
                     : "Loading warehouses…"}
-                  {loading && result && <Loader2 aria-label="Updating results" className="size-4 shrink-0 animate-spin text-[#f9cc63]" />}
+                  {loading && result && <Loader2 aria-label="Updating results" className="size-4 shrink-0 animate-spin text-[#60a5fa]" />}
                 </h2>
                 <p className="text-[13px] text-white/65">{result ? `${formatNumber(listSqft)} total sqft` : "\u00a0"}</p>
               </div>

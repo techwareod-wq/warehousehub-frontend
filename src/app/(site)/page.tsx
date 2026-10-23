@@ -32,17 +32,12 @@ const FEATURED_CLUSTERS = 6
 // One page-through of the listings per request, shared by the trust strip and the cluster grid.
 const getOverview = cache(() => loadClusterOverview())
 
+// Warehouse type colour code (globals.css [data-wt]): General blue, FTWZ green, Bonded yellow.
 const TYPES = [
-  { name: "General", body: "Ambient Grade A space for everyday storage and distribution.", icon: Warehouse, tone: "blue" },
-  { name: "Bonded", body: "Customs-bonded space for duty-deferred cargo near ports.", icon: ShieldCheck, tone: "amber" },
-  { name: "FTWZ", body: "Free trade warehousing zones for international trade flows.", icon: Globe2, tone: "green" },
+  { name: "General", body: "Ambient Grade A space for everyday storage and distribution.", icon: Warehouse, wt: "general" },
+  { name: "Bonded", body: "Customs-bonded space for duty-deferred cargo near ports.", icon: ShieldCheck, wt: "bonded" },
+  { name: "FTWZ", body: "Free trade warehousing zones for international trade flows.", icon: Globe2, wt: "ftwz" },
 ] as const
-
-const TONES = {
-  blue: "border-site-blue/40 bg-site-blue/10 text-site-blue",
-  amber: "border-site-amber/40 bg-site-amber/10 text-site-amber",
-  green: "border-site-green/40 bg-site-green/10 text-site-green",
-} as const
 
 const VALUES = [
   {
@@ -73,7 +68,7 @@ const STEPS = [
     title: "Matching & ranking",
     body: "The engine checks the requirement against verified warehouse supply and clusters, then ranks the closest fits.",
     icon: ListOrdered,
-    tone: "amber",
+    tone: "cyan",
   },
   {
     title: "Shortlist & site visits",
@@ -89,8 +84,6 @@ const STEPS = [
   },
 ] as const
 
-const STEP_BADGE = { blue: "bg-site-blue", amber: "bg-site-amber", green: "bg-site-green" } as const
-
 const INDUSTRIES = [
   { name: "E-commerce", body: "Hubs close to demand centres for fast order fulfilment and returns." },
   { name: "FMCG", body: "High-throughput ambient and temperature-aware space for fast-moving stock." },
@@ -103,13 +96,13 @@ export default async function HomePage() {
   const [canSearch, canEnquire] = await Promise.all([hasSiteFeature("search"), hasSiteFeature("enquiries")])
   const catalog = canSearch ? await loadFilterCatalog() : null
   return (
-    <div className="-mb-px flex flex-col bg-site-deep">
+    <div className="-mb-px flex flex-col">
       <Hero canSearch={canSearch} canEnquire={canEnquire} />
 
-      <section aria-label="Network" className="relative border-t border-white/10 bg-site-ink py-10 sm:py-12">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-6 sm:px-8 md:flex-row md:items-center lg:px-12">
-          <p className="flex items-center gap-3 font-heading text-xs font-bold tracking-[0.2em] text-slate-300/80 uppercase sm:text-sm">
-            <span aria-hidden className="size-2 animate-pulse rounded-full bg-emerald-400" />
+      <section aria-label="Network" className="relative px-3 py-10 sm:px-4 sm:py-12">
+        <div className="gl-surface gl-subtle gl-panel mx-auto flex max-w-7xl flex-col justify-between gap-6 px-6 py-6 sm:px-8 md:flex-row md:items-center lg:px-12">
+          <p className="flex items-center gap-3 font-heading text-xs font-bold tracking-[0.2em] text-glass-text-2 uppercase sm:text-sm">
+            <span aria-hidden className="size-2 animate-pulse rounded-full bg-glass-accent" />
             A trusted warehousing partner across India
           </p>
           {canSearch && (
@@ -120,44 +113,40 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section aria-label="What we do" className="relative overflow-hidden bg-site-panel py-24 sm:py-32">
-        <div aria-hidden className="absolute -top-24 left-1/2 h-48 w-full max-w-4xl -translate-x-1/2 rounded-full bg-site-teal-soft/5 blur-[100px]" />
+      <section aria-label="What we do" className="relative overflow-hidden py-24 sm:py-32">
         <div className="relative mx-auto grid max-w-7xl gap-14 px-6 sm:px-8 md:grid-cols-3 md:gap-8 lg:gap-12 lg:px-12">
           {VALUES.map((v, i) => (
             <Reveal key={v.title} delay={i * 120} className="relative pt-6">
-              <div className="relative h-full rounded-tl-xl rounded-tr-[4rem] rounded-br-xl rounded-bl-[4rem] border border-white/20 bg-site-panel p-8 pt-12 pb-12 shadow-xl">
+              <div className="gl-surface relative h-full rounded-tl-[24px] rounded-tr-[4rem] rounded-br-[24px] rounded-bl-[4rem] p-8 pt-12 pb-12">
                 <span
                   aria-hidden
-                  className="absolute -top-8 right-4 flex size-[4.5rem] items-center justify-center rounded-[1.25rem] bg-gradient-to-br from-site-teal-soft to-site-teal-deep text-white shadow-md"
+                  className="absolute -top-8 right-4 flex size-[4.5rem] items-center justify-center rounded-[1.25rem] bg-gradient-to-br from-glass-accent-text to-glass-accent text-white shadow-md"
                 >
                   <v.icon className="size-7" />
                 </span>
                 <h3 className="text-center font-heading text-lg tracking-wide text-white">{v.title}</h3>
-                <p className="mx-auto mt-3 max-w-[280px] text-center text-[13px] leading-relaxed text-slate-300">{v.body}</p>
+                <p className="mx-auto mt-3 max-w-[280px] text-center text-sm leading-relaxed text-glass-text-3">{v.body}</p>
               </div>
             </Reveal>
           ))}
         </div>
       </section>
 
-      <section id="clusters" className="scroll-mt-24 bg-gradient-to-r from-site-band-from to-site-band-to pt-20 sm:pt-24">
+      <section id="clusters" className="scroll-mt-24 pt-20 sm:pt-24">
         <div className="mx-auto mb-12 flex max-w-7xl flex-col justify-between gap-6 px-6 sm:px-8 md:flex-row md:items-end lg:px-12">
           <div>
             <Eyebrow className="mb-2">Hubs</Eyebrow>
             <h2 className="mb-4 font-heading text-3xl leading-tight font-bold tracking-widest text-white uppercase sm:text-[2.75rem]">
               Featured clusters
             </h2>
-            <p className="max-w-3xl text-sm leading-relaxed text-white/90">
+            <p className="max-w-3xl text-sm leading-relaxed text-glass-text-3">
               The hubs with the most live listings right now, with the localities each one covers.
             </p>
           </div>
           {canSearch && (
-            <Link
-              href="/search"
-              className="inline-flex shrink-0 items-center gap-2 self-start rounded-sm border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white hover:text-site-ink md:self-auto"
-            >
+            <GlassButtonLink href="/search" variant="secondary" className="shrink-0 self-start md:self-auto">
               View all warehouses <ArrowRight className="size-4" />
-            </Link>
+            </GlassButtonLink>
           )}
         </div>
         <div className="mx-auto max-w-7xl px-6 pb-16 sm:px-8 lg:px-12">
@@ -166,7 +155,7 @@ export default async function HomePage() {
               <FeaturedClusters />
             </Suspense>
           ) : (
-            <p className="border-t border-white/20 py-16 text-center text-sm tracking-widest text-white/80 uppercase">
+            <p className="gl-surface gl-subtle gl-panel py-16 text-center text-sm tracking-widest text-glass-text-2 uppercase">
               Search isn&apos;t on for your account yet.
             </p>
           )}
@@ -174,17 +163,17 @@ export default async function HomePage() {
       </section>
 
       {canSearch && (
-        <section aria-label="Live listings map" className="border-t border-white/10 bg-site-ink py-20 sm:py-24">
+        <section aria-label="Live listings map" className="py-20 sm:py-24">
           <div className="mx-auto flex max-w-7xl flex-col gap-10 px-6 sm:px-8 lg:px-12">
             <SectionIntro badge="Live map" title="Every listing," accent="one map" lede="Pan around India and open any pin to see the warehouse." />
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-site-panel/60 p-2 shadow-2xl sm:p-3">
+            <div className="gl-surface gl-panel overflow-hidden p-2 sm:p-3">
               <HomeMap catalog={catalog} />
             </div>
           </div>
         </section>
       )}
 
-      <section id="how-it-works" className="scroll-mt-24 border-t border-white/10 bg-site-ink py-20 sm:py-24 lg:py-28">
+      <section id="how-it-works" className="scroll-mt-24 py-20 sm:py-24 lg:py-28">
         <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
           <Reveal>
             <SectionIntro
@@ -198,7 +187,7 @@ export default async function HomePage() {
           <div className="relative mt-16">
             <div
               aria-hidden
-              className="pointer-events-none absolute top-1/2 right-[12%] left-[12%] hidden h-0.5 -translate-y-6 bg-gradient-to-r from-site-blue/20 via-site-blue/60 to-site-green/40 lg:block"
+              className="pointer-events-none absolute top-1/2 right-[12%] left-[12%] hidden h-0.5 -translate-y-6 bg-gradient-to-r from-white/10 via-glass-accent/60 to-white/10 lg:block"
             />
             <ol className="relative grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((s, i) => (
@@ -206,74 +195,71 @@ export default async function HomePage() {
                   as="li"
                   key={s.title}
                   delay={i * 120}
-                  className="group flex flex-col items-center rounded-2xl border border-white/10 bg-[#091421]/80 p-8 text-center backdrop-blur-md hover:border-white/20"
+                  className="gl-surface gl-strong gl-lift group flex flex-col items-center rounded-[20px] p-8 text-center"
                 >
-                  <span className={cn("relative mb-6 flex size-16 items-center justify-center rounded-2xl border shadow-lg transition-transform duration-300 group-hover:scale-110", TONES[s.tone])}>
+                  <span className="gl-accent relative mb-6 flex size-16 items-center justify-center rounded-2xl border shadow-lg transition-transform duration-300 group-hover:scale-110">
                     <s.icon aria-hidden className="size-6" />
-                    <span className={cn("absolute -top-2 -right-2 rounded-full px-2 py-0.5 font-mono text-[11px] font-bold text-black shadow", STEP_BADGE[s.tone])}>
+                    <span className="absolute -top-2 -right-2 rounded-full bg-glass-accent px-2 py-0.5 font-mono text-xs font-bold text-white shadow">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                   </span>
                   <h3 className="mb-3 font-heading text-xl font-bold tracking-tight text-white uppercase">{s.title}</h3>
-                  <p className="text-sm leading-relaxed text-slate-300/80">{s.body}</p>
+                  <p className="text-sm leading-relaxed text-glass-text-3">{s.body}</p>
                 </Reveal>
               ))}
             </ol>
           </div>
           <p className="mt-10 text-center">
-            <Link href="/nexus" className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-site-cyan uppercase hover:underline">
+            <Link href="/nexus" className="gl-focus inline-flex items-center gap-2 rounded-sm text-xs font-bold tracking-widest text-glass-accent-text uppercase hover:underline">
               Inside the Nexus engine <ArrowRight className="size-3.5" />
             </Link>
           </p>
         </div>
       </section>
 
-      <section id="industries" className="scroll-mt-24 bg-gradient-to-r from-site-band-from to-site-band-to pt-12 pb-16 shadow-inner">
+      <section id="industries" className="scroll-mt-24 pt-12 pb-16">
         <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
           <Eyebrow className="mb-2 text-center lg:text-left">Sectors</Eyebrow>
           <h2 className="mb-12 text-center font-heading text-2xl font-bold tracking-widest text-white uppercase sm:mb-16 sm:text-[2.75rem] lg:text-left">
             Industries we serve
           </h2>
-          <ul className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5 lg:gap-0">
+          <ul className="gl-surface gl-subtle gl-panel grid gap-10 p-8 sm:grid-cols-2 sm:p-10 lg:grid-cols-5 lg:gap-0">
             {INDUSTRIES.map((ind, i) => (
               <Reveal
                 as="li"
                 key={ind.name}
                 delay={i * 80}
-                className={cn("flex flex-col items-center text-center lg:items-start lg:text-left", i > 0 ? "lg:border-l lg:border-white/20 lg:pl-8" : "lg:pr-8")}
+                className={cn("flex flex-col items-center text-center lg:items-start lg:text-left", i > 0 ? "lg:border-l lg:border-white/10 lg:pl-8" : "lg:pr-8")}
               >
                 <h3 className="mb-3 font-heading text-[13px] font-extrabold tracking-widest text-white uppercase">{ind.name}</h3>
-                <p className="max-w-[220px] text-[13px] leading-relaxed text-white/90">{ind.body}</p>
+                <p className="max-w-[220px] text-sm leading-relaxed text-glass-text-3">{ind.body}</p>
               </Reveal>
             ))}
           </ul>
         </div>
       </section>
 
-      <section id="contact" className="scroll-mt-24 bg-site-deep">
+      <section id="contact" className="scroll-mt-24">
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-20 sm:px-8 lg:grid-cols-[3fr_2fr] lg:items-center lg:px-12">
           <div className="flex flex-col items-start gap-5">
-            <p className="font-heading text-xs font-semibold tracking-[0.3em] text-site-cyan uppercase">Need something specific?</p>
+            <p className="font-heading text-xs font-semibold tracking-[0.3em] text-glass-accent-text uppercase">Need something specific?</p>
             <h2 className="font-heading text-4xl leading-[0.95] font-bold tracking-tighter text-balance text-white uppercase sm:text-6xl">
-              Can&apos;t find the <span className="text-site-teal">right fit?</span>
+              Can&apos;t find the <span className="text-glass-accent-text">right fit?</span>
             </h2>
             <p className="max-w-md text-sm text-muted-foreground">
               Describe the space you need and our team will run it through the Nexus engine for you.
             </p>
             {canEnquire && (
-              <Link
-                href="/enquire"
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-site-teal-soft to-site-teal-deep px-7 py-3 font-heading text-sm font-bold tracking-widest text-white uppercase shadow-lg transition-transform hover:scale-[1.02]"
-              >
+              <GlassButtonLink href="/enquire" size="lg" className="font-heading font-bold tracking-widest uppercase">
                 Tell us what you need <ArrowRight className="size-4" />
-              </Link>
+              </GlassButtonLink>
             )}
           </div>
           <address className="flex flex-col gap-3 text-sm text-muted-foreground not-italic">
-            <a href={`mailto:${CONTACT.email}`} className="w-fit hover:text-site-cyan">
+            <a href={`mailto:${CONTACT.email}`} className="gl-focus w-fit rounded-sm hover:text-glass-accent-text">
               {CONTACT.email}
             </a>
-            <a href={`tel:${CONTACT.phone.replace(/\s/g, "")}`} className="w-fit hover:text-site-cyan">
+            <a href={`tel:${CONTACT.phone.replace(/\s/g, "")}`} className="gl-focus w-fit rounded-sm hover:text-glass-accent-text">
               {CONTACT.phone}
             </a>
             <span>{CONTACT.address}</span>
@@ -295,7 +281,7 @@ function Hero({ canSearch, canEnquire }: { canSearch: boolean; canEnquire: boole
         <div className="size-full bg-[linear-gradient(rgb(255_255_255/4%)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/4%)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
       </div>
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.08)_0%,rgba(7,19,29,0.7)_90%)]" />
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-site-ink via-site-ink/30 to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-glass-navy via-glass-navy/30 to-transparent" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-6 pt-32 pb-20 sm:px-8 sm:pt-36 lg:px-12 lg:pb-28">
         <h1 className="font-heading text-5xl leading-[1.02] font-bold tracking-tight text-balance text-white/95 uppercase sm:text-7xl lg:text-8xl">
@@ -339,8 +325,12 @@ function Hero({ canSearch, canEnquire }: { canSearch: boolean; canEnquire: boole
           {TYPES.map((t) => {
             const body = (
               <>
+                <span aria-hidden data-wt={t.wt} className="wt-dot absolute inset-x-6 top-0 h-px rounded-full opacity-80" />
                 <div className="flex items-center justify-between">
-                  <span className={cn("flex size-9 items-center justify-center rounded-lg border transition-transform duration-300 group-hover:scale-105", TONES[t.tone])}>
+                  <span
+                    data-wt={t.wt}
+                    className="wt-tile flex size-9 items-center justify-center rounded-lg border transition-transform duration-300 group-hover:scale-105"
+                  >
                     <t.icon aria-hidden className="size-4" />
                   </span>
                   {canSearch && (
@@ -356,15 +346,17 @@ function Hero({ canSearch, canEnquire }: { canSearch: boolean; canEnquire: boole
               </>
             )
             // Three tiles, so each can carry its own blur (lists use gl-plain instead).
-            const cls = cn(glassSurface(), "group flex h-full flex-col justify-between rounded-[20px] p-4 sm:p-5")
+            const cls = cn(glassSurface(), "group relative flex h-full flex-col justify-between rounded-[20px] p-4 sm:p-5")
             return (
               <li key={t.name}>
                 {canSearch ? (
-                  <Link href="/search" className={cn(cls, "gl-lift gl-gold-edge gl-focus")}>
+                  <Link href="/search" data-wt={t.wt} className={cn(cls, "gl-lift gl-accent-edge gl-focus")}>
                     {body}
                   </Link>
                 ) : (
-                  <div className={cls}>{body}</div>
+                  <div data-wt={t.wt} className={cls}>
+                    {body}
+                  </div>
                 )}
               </li>
             )
@@ -380,7 +372,7 @@ async function NetworkStats() {
   if (!overview) return null
   const stats = [
     { value: overview.warehouses, label: "Warehouses", icon: Warehouse, cls: "text-site-blue" },
-    { value: overview.cities, label: "Cities", icon: Building2, cls: "text-site-amber" },
+    { value: overview.cities, label: "Cities", icon: Building2, cls: "text-site-cyan" },
     { value: overview.clusters.length, label: "Clusters", icon: Network, cls: "text-site-green" },
   ]
   return (
@@ -390,7 +382,7 @@ async function NetworkStats() {
           <s.icon aria-hidden className={cn("size-5 shrink-0", s.cls)} />
           <p className="flex flex-col leading-tight">
             <span className="font-heading text-base font-bold text-white sm:text-lg">{s.value.toLocaleString("en-IN")}</span>
-            <span className="text-xs text-slate-400">{s.label}</span>
+            <span className="text-xs text-glass-text-3">{s.label}</span>
           </p>
         </li>
       ))}
@@ -402,7 +394,7 @@ function StatsSkeleton() {
   return (
     <div aria-hidden className="flex gap-10">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="h-9 w-24 animate-pulse rounded-md bg-white/5" />
+        <div key={i} className="h-9 w-24 animate-pulse rounded-[12px] bg-white/5" />
       ))}
     </div>
   )
@@ -414,15 +406,15 @@ async function FeaturedClusters() {
   const clusters = overview?.clusters.slice(0, FEATURED_CLUSTERS) ?? []
   if (clusters.length === 0) {
     return (
-      <p className="border-t border-white/20 py-16 text-center text-sm tracking-widest text-white/80 uppercase">
+      <p className="gl-surface gl-subtle gl-panel py-16 text-center text-sm tracking-widest text-glass-text-2 uppercase">
         {overview ? "No live listings yet." : "Clusters are unavailable right now."}
       </p>
     )
   }
   return (
-    <ul className="grid gap-0 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {clusters.map((c, i) => (
-        <Reveal as="li" key={c.key} delay={(i % 3) * 120} className="border-[#0b1f2a] sm:border-r">
+        <Reveal as="li" key={c.key} delay={(i % 3) * 120}>
           <ClusterCard cluster={c} />
         </Reveal>
       ))}
@@ -432,9 +424,9 @@ async function FeaturedClusters() {
 
 function ClustersSkeleton() {
   return (
-    <div aria-hidden className="grid gap-0 sm:grid-cols-2 lg:grid-cols-3">
+    <div aria-hidden className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="aspect-[5/4] animate-pulse border-r border-[#0b1f2a] bg-site-ink/40 sm:aspect-[3/4]" />
+        <div key={i} className="gl-surface gl-plain aspect-[5/4] animate-pulse rounded-[24px] sm:aspect-[3/4]" />
       ))}
     </div>
   )

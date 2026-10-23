@@ -5,11 +5,11 @@ export function SectionBadge({ children, icon, className }: { children: React.Re
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-site-blue/30 bg-site-blue/10 px-3.5 py-1 text-[10px] font-bold tracking-[0.2em] text-site-blue uppercase",
+        "gl-accent inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold tracking-[0.2em] uppercase",
         className,
       )}
     >
-      {icon ?? <span aria-hidden className="size-1.5 rounded-full bg-site-blue" />}
+      {icon ?? <span aria-hidden className="size-1.5 rounded-full bg-glass-accent" />}
       {children}
     </span>
   )
@@ -48,11 +48,11 @@ export function SectionIntro({
         {accent && (
           <>
             {" "}
-            <span className="bg-gradient-to-r from-site-blue to-site-cyan bg-clip-text text-transparent">{accent}</span>
+            <span className="bg-gradient-to-r from-glass-accent-text to-glass-accent bg-clip-text text-transparent">{accent}</span>
           </>
         )}
       </h2>
-      {lede && <p className="mt-4 text-base leading-relaxed text-pretty text-slate-300/80 sm:text-lg">{lede}</p>}
+      {lede && <p className="mt-4 text-base leading-relaxed text-pretty text-glass-text-3 sm:text-lg">{lede}</p>}
     </div>
   )
 }

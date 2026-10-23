@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react"
 import { Check, MapPin } from "lucide-react"
-import { Input } from "@/components/ui"
+import { GlassInput, glassSurface } from "@/components/glass"
 import { cn } from "@/lib/utils"
 
 /** A type-to-filter city list. The chosen city is `value`; typing alone doesn't pick one. */
@@ -17,8 +17,7 @@ export function CityPicker({ cities, value, onChange }: { cities: string[]; valu
   return (
     <div className="flex flex-col gap-3">
       <div className="relative">
-        <MapPin className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
+        <GlassInput
           value={text}
           onChange={(e) => {
             setText(e.target.value)
@@ -34,13 +33,14 @@ export function CityPicker({ cities, value, onChange }: { cities: string[]; valu
           placeholder="Search cities"
           aria-label="City"
           aria-controls={listId}
-          className="h-11 rounded-full pl-10"
+          className="rounded-full pl-10"
           autoFocus
         />
+        <MapPin className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-glass-text-3" />
       </div>
-      <ul id={listId} role="listbox" aria-label="Cities" className="glass max-h-64 overflow-y-auto rounded-2xl p-1.5">
+      <ul id={listId} role="listbox" aria-label="Cities" className={cn(glassSurface({ level: "subtle" }), "max-h-64 overflow-y-auto rounded-[18px] p-1.5")}>
         {shown.length === 0 ? (
-          <li className="px-3 py-2.5 text-sm text-muted-foreground">No city matches “{text.trim()}”.</li>
+          <li className="px-3 py-2.5 text-sm text-glass-text-3">No city matches “{text.trim()}”.</li>
         ) : (
           shown.map((c) => {
             const on = c === value
@@ -53,8 +53,8 @@ export function CityPicker({ cities, value, onChange }: { cities: string[]; valu
                     onChange(c)
                   }}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors",
-                    on ? "bg-site-cyan/15 text-site-cyan" : "text-white/85 hover:bg-white/5",
+                    "gl-focus flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm transition-colors",
+                    on ? "gl-accent" : "border-transparent text-glass-text-2 hover:bg-white/5",
                   )}
                 >
                   {c}

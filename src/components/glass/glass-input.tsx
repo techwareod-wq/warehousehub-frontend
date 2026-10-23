@@ -1,9 +1,14 @@
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-/** A glass text input (14px radius, gold focus). */
+/** A glass text input (14px radius, blue focus). */
 export function GlassInput({ className, ...props }: React.ComponentProps<"input">) {
   return <input className={cn("gl-input h-11 w-full px-4 text-sm", className)} {...props} />
+}
+
+/** A glass textarea. */
+export function GlassTextarea({ className, ...props }: React.ComponentProps<"textarea">) {
+  return <textarea className={cn("gl-input w-full px-4 py-3 text-sm", className)} {...props} />
 }
 
 /** A native select in glass. `className` goes on the wrapper (size it there). */

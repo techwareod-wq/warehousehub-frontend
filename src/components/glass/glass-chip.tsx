@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
 
 /**
- * A pill toggle: plain glass, gold-tinted while `selected` (aria-pressed).
+ * A pill toggle: plain glass, blue-tinted while `selected` (aria-pressed).
  * Chips sit in rows, so they never blur; their container does.
  */
 export function GlassChip({ selected, className, type = "button", ...props }: React.ComponentProps<"button"> & { selected?: boolean }) {

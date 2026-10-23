@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 import {
   ArrowRight,
   BarChart3,
@@ -19,6 +18,7 @@ import {
   Truck,
   type LucideIcon,
 } from "lucide-react"
+import { GlassButtonLink, glassButton } from "@/components/glass"
 import { Reveal } from "@/components/site/reveal"
 import { SectionBadge, SectionIntro } from "@/components/site/section-heading"
 import { hasSiteFeature } from "@/features/users/lib/server-access"
@@ -117,31 +117,28 @@ const TRUST = [
 export default async function NexusPage() {
   const [canSearch, canEnquire] = await Promise.all([hasSiteFeature("search"), hasSiteFeature("enquiries")])
   return (
-    <div className="-mb-px flex flex-col bg-site-ink text-white">
+    <div className="-mb-px flex flex-col text-white">
       <section className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden border-b border-white/10 pt-20 pb-16 sm:pt-24 lg:pb-24">
         <NodeField />
         <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-6 text-center sm:px-8 lg:px-12">
           <SectionBadge className="mb-6">Platform</SectionBadge>
           <h1 className="font-heading text-5xl leading-none font-black tracking-tight uppercase sm:text-7xl lg:text-8xl">
-            <span className="block bg-gradient-to-r from-site-blue to-site-cyan bg-clip-text text-transparent">Nexus</span>
+            <span className="block bg-gradient-to-r from-glass-accent-text to-glass-accent bg-clip-text text-transparent">Nexus</span>
             <span className="block">Engine</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-base leading-relaxed text-pretty text-slate-300 sm:text-lg">
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-pretty text-glass-text-2 sm:text-lg">
             The matching engine behind our warehouse search, and the warehouse management system our operations run on once
             you move in.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             {canSearch && (
-              <Link
-                href="/search"
-                className="inline-flex items-center gap-2 rounded-lg bg-site-blue px-8 py-4 font-heading text-sm font-bold tracking-widest uppercase shadow-[0_0_30px_rgba(59,130,246,0.35)] transition-colors hover:bg-blue-600"
-              >
+              <GlassButtonLink href="/search" size="lg" className="font-heading font-bold tracking-widest uppercase">
                 Explore warehouses <ArrowRight className="size-4" />
-              </Link>
+              </GlassButtonLink>
             )}
             <a
               href="#wms"
-              className="inline-flex items-center rounded-lg border border-white/15 bg-white/[0.04] px-6 py-4 font-heading text-sm font-bold tracking-widest uppercase backdrop-blur-md transition-colors hover:bg-white/10"
+              className={glassButton({ variant: "secondary", size: "lg", className: "font-heading font-bold tracking-widest uppercase" })}
             >
               See the WMS
             </a>
@@ -149,7 +146,7 @@ export default async function NexusPage() {
         </div>
       </section>
 
-      <section id="wms" className="relative scroll-mt-20 border-b border-white/10 bg-[#06101a]/80 py-20 sm:py-24 lg:py-28">
+      <section id="wms" className="relative scroll-mt-20 border-b border-white/10 py-20 sm:py-24 lg:py-28">
         <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
           <SectionIntro
             title="Tech-enabled storage &"
@@ -157,8 +154,8 @@ export default async function NexusPage() {
             lede="Inbound, stock and dispatch tracked container by container, with the paperwork generated as you go."
             className="mb-12 sm:mb-16"
           />
-          <Reveal className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#081523]/80 p-6 shadow-2xl backdrop-blur-md sm:p-8 lg:p-10">
-            <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-site-blue/50 to-transparent" />
+          <Reveal className="gl-surface gl-strong gl-panel relative overflow-hidden p-6 sm:p-8 lg:p-10">
+            <div aria-hidden className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-glass-accent/80 to-transparent" />
             <div className="flex flex-col justify-between gap-6 border-b border-white/[0.08] pb-8 lg:flex-row lg:items-end">
               <div>
                 <p className="mb-2 flex items-center gap-2">
@@ -166,27 +163,27 @@ export default async function NexusPage() {
                     <span aria-hidden className="absolute inline-flex size-full animate-ping rounded-full bg-site-green opacity-75" />
                     <span className="relative inline-flex size-2 rounded-full bg-site-green" />
                   </span>
-                  <span className="font-heading text-[11px] font-bold tracking-[0.2em] text-slate-300 uppercase">Live in operations</span>
+                  <span className="font-heading text-xs font-bold tracking-[0.2em] text-glass-text-2 uppercase">Live in operations</span>
                 </p>
                 <h3 className="font-heading text-3xl font-black tracking-tight uppercase sm:text-5xl">Container to dispatch</h3>
               </div>
-              <p className="max-w-sm text-sm text-slate-400">
-                The four features below are live today. Items tagged <em className="not-italic text-site-amber">To confirm</em> are
+              <p className="max-w-sm text-sm text-glass-text-3">
+                The four features below are live today. Items tagged <em className="font-semibold text-glass-text not-italic">To confirm</em> are
                 still being verified.
               </p>
             </div>
 
             {/* The live flow, as a pipeline. Decorative summary of the cards below. */}
             <div className="relative mt-8">
-            <div aria-hidden className="absolute top-6 right-[10%] left-[10%] hidden h-px bg-gradient-to-r from-site-blue/30 via-site-cyan/60 to-site-green/40 sm:block" />
+            <div aria-hidden className="absolute top-6 right-[10%] left-[10%] hidden h-px bg-gradient-to-r from-white/10 via-glass-accent/60 to-white/10 sm:block" />
             <ol aria-label="How stock moves through Nexus WMS" className="relative grid grid-cols-1 gap-3 sm:grid-cols-5 sm:gap-2">
               {FLOW.map((f, i) => (
                 <li key={f.label} className="relative flex items-center gap-3 sm:flex-col sm:text-center">
-                  <span className="relative flex size-12 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950/80 text-site-cyan">
+                  <span className="gl-surface gl-plain relative flex size-12 shrink-0 items-center justify-center rounded-[14px] text-glass-accent-text">
                     <f.icon aria-hidden className="size-5" />
-                    <span className="absolute -top-2 -right-2 rounded-full bg-site-blue px-1.5 font-mono text-[10px] font-bold text-white">{i + 1}</span>
+                    <span className="absolute -top-2 -right-2 rounded-full bg-glass-accent px-1.5 font-mono text-xs font-bold text-white">{i + 1}</span>
                   </span>
-                  <span className="font-mono text-[11px] tracking-wider text-slate-300 uppercase">{f.label}</span>
+                  <span className="font-mono text-xs tracking-wider text-glass-text-2 uppercase">{f.label}</span>
                 </li>
               ))}
             </ol>
@@ -194,9 +191,9 @@ export default async function NexusPage() {
 
             <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {WMS_LIVE.map((m, i) => (
-                <Reveal as="li" key={m.title} delay={i * 80} className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-                  <ModuleHead icon={m.icon} title={m.title} tag="Live" tagClass="border-site-green/40 bg-site-green/10 text-site-green" />
-                  <p className="mt-3 text-sm leading-relaxed text-slate-400">{m.body}</p>
+                <Reveal as="li" key={m.title} delay={i * 80} className="gl-surface gl-plain rounded-[20px] p-6">
+                  <ModuleHead icon={m.icon} title={m.title} tag="Live" tagClass="gl-accent" />
+                  <p className="mt-3 text-sm leading-relaxed text-glass-text-3">{m.body}</p>
                 </Reveal>
               ))}
               {WMS_TO_CONFIRM.map((m, i) => (
@@ -204,10 +201,10 @@ export default async function NexusPage() {
                   as="li"
                   key={m.title}
                   delay={(WMS_LIVE.length + i) * 80}
-                  className="rounded-2xl border border-dashed border-site-amber/30 bg-white/[0.01] p-6"
+                  className="gl-surface gl-plain gl-subtle rounded-[20px] border-dashed p-6"
                 >
-                  <ModuleHead icon={m.icon} title={m.title} tag="To confirm" tagClass="border-site-amber/40 bg-site-amber/10 text-site-amber" />
-                  <p className="mt-3 text-sm leading-relaxed text-slate-500">{m.body}</p>
+                  <ModuleHead icon={m.icon} title={m.title} tag="To confirm" tagClass="border-white/25 bg-white/5 text-glass-text-2" />
+                  <p className="mt-3 text-sm leading-relaxed text-glass-text-3">{m.body}</p>
                 </Reveal>
               ))}
             </ul>
@@ -215,29 +212,29 @@ export default async function NexusPage() {
         </div>
       </section>
 
-      <section aria-labelledby="stack-title" className="border-b border-white/10 bg-site-ink py-20 sm:py-24 lg:py-28">
+      <section aria-labelledby="stack-title" className="border-b border-white/10 py-20 sm:py-24 lg:py-28">
         <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
           <div className="mx-auto mb-14 max-w-2xl text-center">
             <SectionBadge className="mb-4">Tech stack</SectionBadge>
             <h2 id="stack-title" className="font-heading text-3xl font-black tracking-tight uppercase sm:text-4xl">
               What the engine is built on
             </h2>
-            <p className="mt-3 text-base leading-relaxed text-slate-400">A modern web platform over our own API, with search and maps at its core.</p>
+            <p className="mt-3 text-base leading-relaxed text-glass-text-3">A modern web platform over our own API, with search and maps at its core.</p>
           </div>
           <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
             {STACK.map((s, i) => (
-              <Reveal as="li" key={s.title} delay={(i % 3) * 100} className="rounded-2xl border border-white/10 bg-white/[0.02] p-8 transition-colors hover:bg-white/[0.04]">
-                <span className="mb-6 flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-300">
+              <Reveal as="li" key={s.title} delay={(i % 3) * 100} className="gl-surface gl-plain gl-lift rounded-[20px] p-8">
+                <span className="gl-accent mb-6 flex size-12 items-center justify-center rounded-[14px] border">
                   <s.icon aria-hidden className="size-5" />
                 </span>
                 <h3 className="mb-3 font-heading text-lg font-bold tracking-tight uppercase">{s.title}</h3>
-                <p className="text-sm leading-relaxed text-slate-400">{s.body}</p>
+                <p className="text-sm leading-relaxed text-glass-text-3">{s.body}</p>
               </Reveal>
             ))}
           </ul>
           <ul aria-label="Technologies" className="mt-12 flex flex-wrap justify-center gap-2">
             {STACK_TECH.map((t) => (
-              <li key={t} className="rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 font-mono text-[11px] tracking-wider text-slate-300">
+              <li key={t} className="gl-chip px-3.5 py-1.5 font-mono text-xs tracking-wider">
                 {t}
               </li>
             ))}
@@ -245,33 +242,30 @@ export default async function NexusPage() {
         </div>
       </section>
 
-      <section aria-labelledby="trust-title" className="bg-[#060c14] py-20 sm:py-24 lg:py-28">
+      <section aria-labelledby="trust-title" className="py-20 sm:py-24 lg:py-28">
         <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
           <div className="mx-auto mb-16 max-w-2xl text-center">
-            <SectionBadge className="mb-4 border-white/10 bg-white/5 text-slate-300">Trust & operations</SectionBadge>
+            <SectionBadge className="mb-4">Trust & operations</SectionBadge>
             <h2 id="trust-title" className="font-heading text-3xl font-black tracking-tight uppercase sm:text-4xl">
               Built to be relied on
             </h2>
           </div>
           <ul className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
             {TRUST.map((t, i) => (
-              <Reveal as="li" key={t.title} delay={i * 100} className="rounded-2xl border border-white/10 bg-white/[0.02] p-8 transition-colors hover:bg-white/[0.04]">
-                <span className="mb-6 flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-slate-300">
+              <Reveal as="li" key={t.title} delay={i * 100} className="gl-surface gl-plain gl-lift rounded-[20px] p-8">
+                <span className="gl-accent mb-6 flex size-12 items-center justify-center rounded-[14px] border">
                   <t.icon aria-hidden className="size-5" />
                 </span>
                 <h3 className="mb-3 font-heading text-lg font-bold tracking-tight uppercase">{t.title}</h3>
-                <p className="text-sm leading-relaxed text-slate-400">{t.body}</p>
+                <p className="text-sm leading-relaxed text-glass-text-3">{t.body}</p>
               </Reveal>
             ))}
           </ul>
           {canEnquire && (
             <p className="mt-14 text-center">
-              <Link
-                href="/enquire"
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-site-teal-soft to-site-teal-deep px-8 py-3.5 font-heading text-sm font-bold tracking-widest uppercase shadow-lg transition-transform hover:scale-[1.02]"
-              >
+              <GlassButtonLink href="/enquire" size="lg" className="font-heading font-bold tracking-widest uppercase">
                 Talk to our team <ArrowRight className="size-4" />
-              </Link>
+              </GlassButtonLink>
             </p>
           )}
         </div>
@@ -284,12 +278,12 @@ function ModuleHead({ icon: Icon, title, tag, tagClass }: { icon: LucideIcon; ti
   return (
     <div className="flex items-start justify-between gap-3">
       <span className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-site-cyan">
+        <span className="gl-surface gl-plain flex size-10 items-center justify-center rounded-[12px] text-glass-accent-text">
           <Icon aria-hidden className="size-5" />
         </span>
         <h4 className="font-heading text-base font-bold tracking-tight uppercase">{title}</h4>
       </span>
-      <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider uppercase", tagClass)}>{tag}</span>
+      <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 font-mono text-xs font-bold tracking-wider uppercase", tagClass)}>{tag}</span>
     </div>
   )
 }
@@ -303,16 +297,15 @@ function NodeField() {
     [0, 1], [1, 2], [2, 3], [3, 0], [3, 4], [4, 5], [5, 6], [6, 2], [2, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 8], [11, 12], [12, 13], [12, 14], [14, 6],
   ]
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,#0f2a40_0%,#07131d_65%)]">
+    <div aria-hidden className="pointer-events-none absolute inset-0">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute -inset-[5%] size-[110%] animate-drift opacity-60">
         {links.map(([a, b]) => (
-          <line key={`${a}-${b}`} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} stroke="#3b82f6" strokeOpacity="0.25" strokeWidth="0.12" />
+          <line key={`${a}-${b}`} x1={nodes[a][0]} y1={nodes[a][1]} x2={nodes[b][0]} y2={nodes[b][1]} stroke="#ffffff" strokeOpacity="0.14" strokeWidth="0.12" />
         ))}
         {nodes.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 0.55 : 0.35} fill={i % 4 === 0 ? "#22d3ee" : "#60a5fa"} fillOpacity="0.8" />
+          <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 0.55 : 0.35} fill={i % 4 === 0 ? "#3b82f6" : "#ffffff"} fillOpacity={i % 4 === 0 ? 0.8 : 0.45} />
         ))}
       </svg>
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-site-ink to-transparent" />
     </div>
   )
 }

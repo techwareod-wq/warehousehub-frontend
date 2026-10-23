@@ -10,6 +10,7 @@ import { Dialog, DialogOverlay, DialogPortal } from "@/components/ui"
 import { EnquiryForm } from "@/features/enquiries"
 import { formatNumber } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { typeBadge, wtAttr } from "@/lib/warehouse-type"
 import { TYPE_LABELS, type FinderFilters, type FinderWarehouse } from "../entities/finder.entity"
 import { distanceOf, placeOf, rentOf, SpecGrid } from "./finder-card"
 import { LocationMap } from "./location-map"
@@ -106,7 +107,7 @@ export function QuickView({
                 <DialogPrimitive.Title className="sr-only">Enquire about {w.name}</DialogPrimitive.Title>
                 <p className="-mb-1 pr-10 text-sm text-white/70">
                   <span className="font-semibold text-white">{w.name}</span>
-                  <span className="ml-2 font-mono text-xs tracking-wider text-[#f9cc63] uppercase">{w.shortId}</span>
+                  <span className="ml-2 font-mono text-xs tracking-wider text-[#60a5fa] uppercase">{w.shortId}</span>
                 </p>
                 <EnquiryForm
                   key={w.shortId}
@@ -119,7 +120,7 @@ export function QuickView({
             ) : (
               <>
                 {w.loc ? (
-                  <LocationMap point={w.loc} directionsHref={directionsUrl(w)} className="h-[220px] shrink-0" />
+                  <LocationMap point={w.loc} type={w.type} directionsHref={directionsUrl(w)} className="h-[220px] shrink-0" />
                 ) : (
                   <div className="flex h-[140px] shrink-0 flex-col items-center justify-center gap-2 bg-white/[0.03] bg-[linear-gradient(rgb(255_255_255/5%)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/5%)_1px,transparent_1px)] bg-[size:20px_20px] text-sm text-white/70">
                     <MapPin aria-hidden className="size-6 text-white/50" />
@@ -130,10 +131,14 @@ export function QuickView({
                   <div className="flex flex-col gap-2">
                     <DialogPrimitive.Title className="text-xl leading-snug font-bold text-white">{w.name}</DialogPrimitive.Title>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-[#F5B82E]/45 bg-[#F5B82E]/15 px-2.5 py-0.5 font-mono text-xs font-semibold tracking-wider text-[#f9cc63] uppercase">
+                      <span className="rounded-full border border-[#3b82f6]/45 bg-[#3b82f6]/15 px-2.5 py-0.5 font-mono text-xs font-semibold tracking-wider text-[#60a5fa] uppercase">
                         {w.shortId}
                       </span>
-                      {type && <span className="rounded-full border border-white/15 bg-white/8 px-2.5 py-0.5 text-xs font-semibold text-white/90">{type}</span>}
+                      {type && (
+                        <span data-wt={wtAttr(w.type)} className={typeBadge(w.type)}>
+                          {type}
+                        </span>
+                      )}
                     </div>
                     {(place || distance) && (
                       <p className="flex items-center gap-1.5 text-sm text-white/70">
@@ -147,7 +152,7 @@ export function QuickView({
 
                   <p className="flex items-baseline justify-between gap-3 border-t border-white/10 pt-4">
                     <span className="text-xs font-medium tracking-[0.08em] text-white/65 uppercase">Rent</span>
-                    <span className="text-lg font-bold text-[#f9cc63]">{rentOf(w)}</span>
+                    <span className="text-lg font-bold text-[#60a5fa]">{rentOf(w)}</span>
                   </p>
 
                   {w.tags.length > 0 && (
@@ -165,7 +170,7 @@ export function QuickView({
                       ref={enquireRef}
                       type="button"
                       onClick={() => swap(true)}
-                      className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-[#F5B82E] px-6 text-sm font-bold tracking-[0.08em] text-[#0a1220] uppercase transition-colors hover:bg-[#f9cc63]"
+                      className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-[#3b82f6] px-6 text-sm font-bold tracking-[0.08em] text-white uppercase transition-colors hover:bg-[#60a5fa]"
                     >
                       Enquire now
                     </button>

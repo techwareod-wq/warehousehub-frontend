@@ -29,8 +29,8 @@ export function CardSkeleton() {
 export function Notice({ title, body, action }: { title: string; body?: string; action?: React.ReactNode }) {
   return (
     <div className="xf-glass flex flex-col items-center gap-3 rounded-3xl px-6 py-12 text-center">
-      <span className="flex size-11 items-center justify-center rounded-full bg-[#F5B82E]/15">
-        <MapPin aria-hidden className="size-5 text-[#f9cc63]" />
+      <span className="flex size-11 items-center justify-center rounded-full bg-[#3b82f6]/15">
+        <MapPin aria-hidden className="size-5 text-[#60a5fa]" />
       </span>
       <p className="text-base font-semibold text-white">{title}</p>
       {body && <p className="max-w-sm text-sm text-white/70">{body}</p>}

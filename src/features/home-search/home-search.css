@@ -1,6 +1,6 @@
 /* The home hero's search bar. Surfaces come from the glass system
    (GlassInput / GlassButton, globals.css); this only adds what a hero-sized
-   bar needs: frosting over the hero, a stronger gold glow on focus, the
+   bar needs: frosting over the hero, a stronger blue glow on focus, the
    rotating placeholder and the empty-submit shake. */
 
 .hs-input {
@@ -16,8 +16,8 @@
   background-color: var(--gl-surface-hover);
   box-shadow:
     var(--gl-highlight),
-    0 0 0 3px rgb(245 184 46 / 18%),
-    0 0 36px rgb(245 184 46 / 22%),
+    0 0 0 3px rgb(59 130 246 / 18%),
+    0 0 36px rgb(59 130 246 / 22%),
     var(--gl-shadow);
 }
 .hs-form[data-shake] {

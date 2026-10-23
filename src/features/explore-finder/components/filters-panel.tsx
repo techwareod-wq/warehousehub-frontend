@@ -5,6 +5,7 @@
 
 import { Check, ChevronDown, X } from "lucide-react"
 import { formatNumber } from "@/lib/format"
+import { wtAttr } from "@/lib/warehouse-type"
 import {
   EMPTY_FILTERS,
   FEATURE_OPTIONS,
@@ -22,7 +23,7 @@ function Section({ title, active, children }: { title: string; active: boolean; 
       <h3 className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.14em] text-white/90 uppercase">
         {title}
         {active && (
-          <span className="size-1.5 rounded-full bg-[#F5B82E] shadow-[0_0_8px_rgb(245_184_46/80%)]">
+          <span className="size-1.5 rounded-full bg-[#3b82f6] shadow-[0_0_8px_rgb(59_130_246/80%)]">
             <span className="sr-only">(active)</span>
           </span>
         )}
@@ -57,15 +58,15 @@ const NEAR = [
 ] as const
 
 /** One removable entry per active filter; `clear` is null for the radius at its default (it only qualifies the place). */
-function activeChips(f: FinderFilters): { key: string; label: string; clear: Partial<FinderFilters> | null }[] {
-  const chips: { key: string; label: string; clear: Partial<FinderFilters> | null }[] = []
+function activeChips(f: FinderFilters): { key: string; label: string; clear: Partial<FinderFilters> | null; wt?: string }[] {
+  const chips: { key: string; label: string; clear: Partial<FinderFilters> | null; wt?: string }[] = []
   if (f.place) {
     chips.push({ key: "place", label: f.place, clear: { place: "" } })
     const radius = RADIUS_OPTIONS.find((o) => o.value === String(f.radiusKm))
     if (radius) chips.push({ key: "radius", label: radius.label, clear: f.radiusKm === EMPTY_FILTERS.radiusKm ? null : { radiusKm: EMPTY_FILTERS.radiusKm } })
   }
   if (f.amount !== null) chips.push({ key: "amount", label: `${formatNumber(f.amount)} ${f.unit === "pallets" ? "pallets" : "sqft"}`, clear: { amount: null } })
-  if (f.type) chips.push({ key: "type", label: TYPE_LABELS[f.type] ?? f.type, clear: { type: "" } })
+  if (f.type) chips.push({ key: "type", label: TYPE_LABELS[f.type] ?? f.type, clear: { type: "" }, wt: wtAttr(f.type) })
   for (const n of NEAR) if (f[n.key]) chips.push({ key: n.key, label: n.label, clear: { [n.key]: false } })
   for (const o of FEATURE_OPTIONS) {
     if (f.features.includes(o.value)) chips.push({ key: o.value, label: o.label, clear: { features: f.features.filter((x) => x !== o.value) } })
@@ -73,7 +74,7 @@ function activeChips(f: FinderFilters): { key: string; label: string; clear: Par
   return chips
 }
 
-/** EXPLORE-FILTERS: a gold chip per active filter; each "x" removes just that one. Renders nothing when none are active. */
+/** EXPLORE-FILTERS: a blue chip per active filter; each "x" removes just that one. Renders nothing when none are active. */
 export function ActiveFilters({ filters, onChange }: { filters: FinderFilters; onChange: (patch: Partial<FinderFilters>) => void }) {
   const chips = activeChips(filters)
   if (!chips.length) return null
@@ -81,6 +82,7 @@ export function ActiveFilters({ filters, onChange }: { filters: FinderFilters; o
     <ul aria-label="Active filters" className="flex flex-wrap gap-1.5">
       {chips.map((c) => (
         <li key={c.key} className="xf-chip inline-flex h-8 items-center gap-1 rounded-full pr-1 pl-3 text-[13px] font-semibold">
+          {c.wt && <span aria-hidden data-wt={c.wt} className="wt-dot mr-0.5 size-2 rounded-full" />}
           {c.label}
           {c.clear ? (
             <button
@@ -200,10 +202,12 @@ export function FiltersPanel({
                 key={t.value}
                 type="button"
                 aria-pressed={on}
+                data-wt={t.value}
                 title={on ? "Tap again to clear" : undefined}
                 onClick={() => onChange({ type: on ? "" : t.value })}
-                className="rounded-full text-[15px] font-semibold"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full text-[15px] font-semibold"
               >
+                <span aria-hidden data-wt={t.value} className="wt-dot size-2 shrink-0 rounded-full" />
                 {t.label}
               </button>
             )
@@ -235,7 +239,7 @@ export function FiltersPanel({
         <button
           type="button"
           onClick={onClear}
-          className="self-start rounded-md text-sm font-medium text-[#f9cc63] underline-offset-4 hover:underline"
+          className="self-start rounded-md text-sm font-medium text-[#60a5fa] underline-offset-4 hover:underline"
         >
           Clear filters
         </button>

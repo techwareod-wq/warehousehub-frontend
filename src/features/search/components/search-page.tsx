@@ -4,14 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, List, Map as MapIcon, MapPin, SlidersHorizontal, Sparkles } from "lucide-react"
-import { Button, Input, Sheet, SheetContent, SheetHeader, SheetTitle, Textarea } from "@/components/ui"
-import { EmptyState, ErrorState, LoadingRows, NativeSelect, Pager } from "@/components/common"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui"
+import { EmptyState, ErrorState, LoadingRows, Pager } from "@/components/common"
+import { GlassButton, GlassChip, GlassInput, GlassPanel, GlassSelect, GlassTextarea } from "@/components/glass"
 import { mapsEnabled } from "@/components/maps/maps-provider"
 import { browserApi } from "@/core/api"
 import { env } from "@/core/config/env"
 import { getSessionId, rememberSearchId } from "@/core/session/visitor-session"
 import { useSiteFeature } from "@/features/users"
-import { cn } from "@/lib/utils"
 import { searchApi, type SearchContext } from "../api/search.api"
 import {
   SORT_OPTIONS,
@@ -142,36 +142,22 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
         }}
       >
         {aiEnabled && (
-          <div className="flex gap-1 self-start rounded-full bg-muted p-1 text-xs">
-            <button
-              type="button"
-              onClick={() => setDescribe(false)}
-              className={cn(
-                "rounded-full px-3 py-1",
-                !describe ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
+          <div className="gl-surface gl-subtle flex gap-1 self-start rounded-full p-1">
+            <GlassChip selected={!describe} onClick={() => setDescribe(false)} className="border-transparent">
               By location
-            </button>
-            <button
-              type="button"
-              onClick={() => setDescribe(true)}
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full px-3 py-1",
-                describe ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
+            </GlassChip>
+            <GlassChip selected={describe} onClick={() => setDescribe(true)} className="border-transparent">
               <Sparkles className="size-3.5" /> Describe it
-            </button>
+            </GlassChip>
           </div>
         )}
         {describe && (
-          <Textarea
+          <GlassTextarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={2}
             placeholder="e.g. 20,000 sq ft warehouse with cold storage and 2 loading docks, under ₹30 per sq ft"
-            className="resize-none rounded-2xl px-4 py-3"
+            className="resize-none rounded-[20px] text-base sm:text-sm"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault()
@@ -182,32 +168,38 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
         )}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <MapPin className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
+            <GlassInput
               value={place}
               onChange={(e) => setPlace(e.target.value)}
               placeholder="City, area or pincode"
-              className="h-10 rounded-full pl-10"
+              className="rounded-full pl-10"
             />
+            <MapPin className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-glass-text-3" />
           </div>
           <div className="flex flex-wrap gap-2">
-            <NativeSelect
+            <GlassSelect
               aria-label="Sort"
               value={query.sort ?? ""}
-              onChange={(v) => navigate({ ...query, sort: (v as SortKey) || undefined, page: 1 })}
-              placeholder="Sort: default"
-              options={SORT_OPTIONS.filter((o) => o.value !== "distance" || query.place)}
-            />
-            <Button type="submit">Search</Button>
-            <Button type="button" variant="outline" className="lg:hidden" onClick={() => setFiltersOpen(true)}>
-              <SlidersHorizontal /> Filters
-            </Button>
+              onChange={(e) => navigate({ ...query, sort: (e.target.value as SortKey) || undefined, page: 1 })}
+              className="w-44 [&_select]:rounded-full"
+            >
+              <option value="">Sort: default</option>
+              {SORT_OPTIONS.filter((o) => o.value !== "distance" || query.place).map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </GlassSelect>
+            <GlassButton type="submit">Search</GlassButton>
+            <GlassButton variant="secondary" className="lg:hidden" onClick={() => setFiltersOpen(true)}>
+              <SlidersHorizontal className="size-4" /> Filters
+            </GlassButton>
           </div>
         </div>
       </form>
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="hidden lg:block">{filters}</aside>
+        <aside className="hidden lg:block">{filters && <GlassPanel className="p-5">{filters}</GlassPanel>}</aside>
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetContent side="left" className="overflow-y-auto">
             <SheetHeader>
@@ -228,39 +220,33 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
               {result?.radius && !loading && <span className="text-muted-foreground"> within {result.radius.usedKm} km</span>}
             </h1>
             {mapsEnabled && (
-              <div className="flex gap-1 rounded-full bg-muted p-1 text-xs">
-                <button
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${view === "list" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setView("list")}
-                >
+              <div className="gl-surface gl-subtle flex gap-1 rounded-full p-1">
+                <GlassChip selected={view === "list"} onClick={() => setView("list")} className="border-transparent">
                   <List className="size-3.5" /> List
-                </button>
-                <button
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${view === "map" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setView("map")}
-                >
+                </GlassChip>
+                <GlassChip selected={view === "map"} onClick={() => setView("map")} className="border-transparent">
                   <MapIcon className="size-3.5" /> Map
-                </button>
+                </GlassChip>
               </div>
             )}
           </div>
 
           {result?.ai && (
-            <div className="flex items-start gap-2 rounded-2xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-              <Sparkles className="mt-0.5 size-3.5 shrink-0" />
+            <GlassPanel level="subtle" className="flex items-start gap-2.5 rounded-[18px] px-4 py-3 text-sm text-glass-text-2">
+              <Sparkles className="mt-0.5 size-4 shrink-0 text-glass-accent-text" />
               <span>
                 {result.ai.parsed
-                  ? "We turned your description into the filters on the left — adjust them to refine."
+                  ? "We turned your description into the filters on the left - adjust them to refine."
                   : "We couldn't fully understand that description, so here is a basic match."}
                 {result.ai.notes.length > 0 && ` ${result.ai.notes.join(" ")}`}
               </span>
-            </div>
+            </GlassPanel>
           )}
           {result?.radius?.message && !loading && (
-            <p className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs">{result.radius.message}</p>
+            <p className="gl-accent rounded-[18px] border px-4 py-2.5 text-sm">{result.radius.message}</p>
           )}
           {result?.degraded.map((d) => (
-            <p key={d} className="flex items-center gap-2 text-xs text-muted-foreground">
+            <p key={d} className="flex items-center gap-2 text-xs text-glass-text-3">
               <AlertCircle className="size-3.5" /> {DEGRADED[d] ?? d}
             </p>
           ))}
@@ -296,13 +282,13 @@ export function SearchPage({ catalog }: { catalog: FilterCatalog | null }) {
           )}
 
           {result?.radius?.countryLink && (
-            <Button
-              variant="outline"
+            <GlassButton
+              variant="secondary"
               className="self-start"
               onClick={() => navigate({ ...query, place: "", radiusKm: undefined, page: 1 })}
             >
               Search the whole country
-            </Button>
+            </GlassButton>
           )}
 
           {result?.fallback && result.fallback.results.length > 0 && (

@@ -5,6 +5,7 @@ import { Show, SignInButton, useUser } from "@clerk/nextjs"
 import { CheckCircle2 } from "lucide-react"
 import { Button, Input, Textarea } from "@/components/ui"
 import { FormRow } from "@/components/common"
+import { glassSurface } from "@/components/glass"
 import { ApiError, browserApi, errorMessage } from "@/core/api"
 import { getSessionId, lastSearchId, newIdempotencyKey } from "@/core/session/visitor-session"
 import { profileApi } from "@/features/users"
@@ -33,7 +34,7 @@ export function EnquiryForm({
   className?: string
 }) {
   return (
-    <div className={cn("flex flex-col gap-4", className ?? "glass rounded-3xl p-6")}>
+    <div className={cn("flex flex-col gap-4", className ?? cn(glassSurface(), "gl-panel p-6"))}>
       <div className="flex flex-col gap-1">
         <h2 className="font-heading text-2xl tracking-tight">{listingName ? "Enquire about this warehouse" : "Tell us what you need"}</h2>
         <p className="text-xs text-muted-foreground">
@@ -120,8 +121,8 @@ function SignedInForm({ listingShortId, initialMessage }: { listingShortId?: str
 
   if (sent) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl bg-green-500/10 p-4 text-sm">
-        <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-green-600" />
+      <div className="flex items-start gap-3 rounded-[18px] border border-green-400/30 bg-green-400/10 p-4 text-sm">
+        <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-green-400" />
         <div>
           <p className="font-medium">Thanks — we&apos;ve got your enquiry.</p>
           <p className="text-muted-foreground">Our team will reach out on {user?.primaryEmailAddress?.emailAddress ?? "your email"} or by phone soon.</p>

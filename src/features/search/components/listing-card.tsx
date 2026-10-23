@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { MapPin, Ruler, ShieldQuestion, Warehouse } from "lucide-react"
 import { Badge } from "@/components/ui"
+import { glassSurface } from "@/components/glass"
+import { cn } from "@/lib/utils"
 import { formatAreaSqft, formatNumber } from "@/lib/format"
 import type { ListingCard } from "../entities/search.entity"
 import { formatRate } from "../lib/rate"
@@ -10,14 +12,15 @@ export function ListingCardView({ card, industryNames }: { card: ListingCard; in
   return (
     <Link
       href={`/warehouses/${card.slug}`}
-      className="glass group flex flex-col overflow-hidden rounded-2xl outline-offset-4 sm:flex-row"
+      // A list item: translucent with no blur of its own; lifts with a blue edge on hover.
+      className={cn(glassSurface({ plain: true }), "gl-lift gl-accent-edge gl-focus group flex flex-col overflow-hidden rounded-[20px] sm:flex-row")}
     >
       <div className="relative aspect-[16/10] w-full shrink-0 bg-muted sm:aspect-auto sm:h-auto sm:w-60">
         {card.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={card.coverUrl} alt={card.name} className="absolute inset-0 size-full object-cover" loading="lazy" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+          <div className="absolute inset-0 flex items-center justify-center text-glass-text-3">
             <Warehouse className="size-8" />
           </div>
         )}
@@ -32,7 +35,7 @@ export function ListingCardView({ card, industryNames }: { card: ListingCard; in
             </Badge>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-glass-text-3">
           {place && (
             <span className="inline-flex items-center gap-1">
               <MapPin className="size-3.5" />
@@ -47,7 +50,7 @@ export function ListingCardView({ card, industryNames }: { card: ListingCard; in
             </span>
           )}
         </div>
-        <p className="font-heading text-lg font-semibold text-site-cyan">{formatRate(card.rate)}</p>
+        <p className="font-heading text-lg font-semibold text-glass-accent-text">{formatRate(card.rate)}</p>
         {card.industries.length > 0 && (
           <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
             {card.industries.slice(0, 5).map((i) => (

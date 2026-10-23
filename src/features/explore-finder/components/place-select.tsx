@@ -106,7 +106,7 @@ export function PlaceSelect({
                   className={cn(
                     "flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors",
                     i === active ? "bg-white/10 text-white" : "text-white/85",
-                    c === value && "text-[#f9cc63]",
+                    c === value && "text-[#60a5fa]",
                   )}
                 >
                   {c}

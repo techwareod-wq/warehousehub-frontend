@@ -49,6 +49,16 @@ export function safeFit(
   const height = el.clientHeight
   if (!points.length || !width || !height) return false
   const pad = clampPadding(padding, width, height)
+  // MapLibre adds the map's own padding (left over from the globe hero view or
+  // an earlier flyTo) to `pad`. When the sum doesn't fit the canvas its globe
+  // camera throws ("reading 'center'") instead of skipping, so drop the
+  // leftover padding first.
+  const { top = 0, right = 0, bottom = 0, left = 0 } = map.getPadding()
+  const maxW = width * (1 - MIN_FREE)
+  const maxH = height * (1 - MIN_FREE)
+  if (left + right + pad.left + pad.right > maxW || top + bottom + pad.top + pad.bottom > maxH) {
+    map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 })
+  }
   if (points.length === 1) {
     map.flyTo({ center: [points[0].lng, points[0].lat], zoom: SINGLE_ZOOM, padding: pad, duration: opts.duration, essential: true }, eventData)
     return true
@@ -66,7 +76,8 @@ export function safeFit(
       eventData,
     )
   } catch (err) {
-    console.error("[finder] fitBounds failed, flying to the centre instead", err)
+    // Recovered below, so a warning (console.error raises the Next dev overlay).
+    console.warn("[finder] fitBounds failed, flying to the centre instead", err)
     map.flyTo({ center: [(west + east) / 2, (south + north) / 2], zoom: FALLBACK_ZOOM, duration: opts.duration, essential: true }, eventData)
   }
   return true

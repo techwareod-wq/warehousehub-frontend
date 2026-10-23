@@ -4,14 +4,18 @@ import "maplibre-gl/dist/maplibre-gl.css"
 import { useEffect, useEffectEvent, useRef, useState } from "react"
 import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap } from "maplibre-gl"
 import { cn } from "@/lib/utils"
+import { addClusterRingImages, CLUSTER_RING_IMAGE, clusterRingSize } from "@/lib/cluster-donut"
+import { TYPE_CLUSTER_PROPERTIES, typeColorExpression, UNKNOWN_TYPE_FILL } from "@/lib/warehouse-type"
 import type { FinderWarehouse, LatLng } from "../entities/finder.entity"
-import { BLUE, CYAN, INDIA, INK, STYLE_URL } from "../lib/map"
+import { INDIA, INK, STYLE_URL } from "../lib/map"
 
 const SOURCE = "finder"
 const HIGHLIGHT = "finder-highlight"
 const IS_CLUSTER: ExpressionSpecification = ["has", "point_count"]
 const UNCLUSTERED: ExpressionSpecification = ["!", ["has", "point_count"]]
 const CLUSTER_RADIUS: ExpressionSpecification = ["interpolate", ["linear"], ["get", "point_count"], 2, 14, 10, 18, 40, 24]
+/** Pins in their warehouse type's colour. */
+const TYPE_COLOR = typeColorExpression()
 
 type Collection = Parameters<GeoJSONSource["setData"]>[0]
 
@@ -19,35 +23,40 @@ function toGeoJSON(list: FinderWarehouse[]): Collection {
   return {
     type: "FeatureCollection",
     features: list.flatMap((w) =>
-      w.loc ? [{ type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [w.loc.lng, w.loc.lat] }, properties: { id: w.shortId } }] : [],
+      w.loc ? [{ type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [w.loc.lng, w.loc.lat] }, properties: { id: w.shortId, type: w.type } }] : [],
     ),
   }
 }
 
-/** Clustered blue markers in the Explore page's glow style, plus an always-on-top highlight. */
+/** Type-coloured markers and type-split cluster rings, plus an always-on-top highlight. */
 function addLayers(map: MapLibreMap) {
-  map.addSource(SOURCE, { type: "geojson", data: toGeoJSON([]), cluster: true, clusterRadius: 50, clusterMaxZoom: 14 })
-  map.addSource(HIGHLIGHT, { type: "geojson", data: toGeoJSON([]) })
-  map.addLayer({
-    id: "cluster-glow",
-    type: "circle",
-    source: SOURCE,
-    filter: IS_CLUSTER,
-    paint: { "circle-color": BLUE, "circle-radius": ["+", CLUSTER_RADIUS, 12], "circle-blur": 1, "circle-opacity": 0.3 },
+  map.addSource(SOURCE, {
+    type: "geojson",
+    data: toGeoJSON([]),
+    cluster: true,
+    clusterRadius: 50,
+    clusterMaxZoom: 14,
+    clusterProperties: TYPE_CLUSTER_PROPERTIES,
   })
+  map.addSource(HIGHLIGHT, { type: "geojson", data: toGeoJSON([]) })
+  // A ring split equally between the types inside (cluster-donut.ts), with the count in the middle.
+  addClusterRingImages(map, UNKNOWN_TYPE_FILL)
   map.addLayer({
     id: "clusters",
-    type: "circle",
-    source: SOURCE,
-    filter: IS_CLUSTER,
-    paint: { "circle-color": BLUE, "circle-opacity": 0.45, "circle-radius": CLUSTER_RADIUS, "circle-stroke-width": 1, "circle-stroke-color": BLUE },
-  })
-  map.addLayer({
-    id: "cluster-count",
     type: "symbol",
     source: SOURCE,
     filter: IS_CLUSTER,
-    layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": ["Noto Sans Regular"], "text-size": 13, "text-allow-overlap": true },
+    layout: {
+      "icon-image": CLUSTER_RING_IMAGE,
+      "icon-size": clusterRingSize(CLUSTER_RADIUS),
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
+      "text-field": ["get", "point_count_abbreviated"],
+      "text-font": ["Noto Sans Regular"],
+      "text-size": 13,
+      "text-allow-overlap": true,
+      "text-ignore-placement": true,
+    },
     paint: { "text-color": "#fff" },
   })
   map.addLayer({
@@ -55,20 +64,20 @@ function addLayers(map: MapLibreMap) {
     type: "circle",
     source: SOURCE,
     filter: UNCLUSTERED,
-    paint: { "circle-color": BLUE, "circle-radius": 13, "circle-blur": 1, "circle-opacity": 0.4 },
+    paint: { "circle-color": TYPE_COLOR, "circle-radius": 13, "circle-blur": 1, "circle-opacity": 0.4 },
   })
   map.addLayer({
     id: "points",
     type: "circle",
     source: SOURCE,
     filter: UNCLUSTERED,
-    paint: { "circle-color": BLUE, "circle-radius": 6.5, "circle-stroke-width": 1.5, "circle-stroke-color": "#fff" },
+    paint: { "circle-color": TYPE_COLOR, "circle-radius": 6.5, "circle-stroke-width": 1.5, "circle-stroke-color": "#fff" },
   })
   map.addLayer({
     id: "highlight",
     type: "circle",
     source: HIGHLIGHT,
-    paint: { "circle-color": CYAN, "circle-radius": 9, "circle-stroke-width": 3, "circle-stroke-color": "#fff" },
+    paint: { "circle-color": TYPE_COLOR, "circle-radius": 9, "circle-stroke-width": 3, "circle-stroke-color": "#fff" },
   })
 }
 

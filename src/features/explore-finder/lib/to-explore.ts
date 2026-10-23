@@ -1,4 +1,5 @@
 import type { ExploreWarehouse } from "@/features/explore/entities/explore.entity"
+import { sqftToSqm } from "@/lib/units"
 import type { FinderWarehouse } from "../entities/finder.entity"
 
 /** Finder results as Explore map markers, so Explore's own cluster layers draw them. Results without a location are skipped. */
@@ -14,11 +15,12 @@ export function toExploreMarkers(list: FinderWarehouse[]): ExploreWarehouse[] {
             locality: w.locality,
             lat: w.loc.lat,
             lng: w.loc.lng,
-            totalSqm: 0,
+            totalSqm: sqftToSqm(w.totalSqft),
             rate: w.rate,
             ratePerSqft: null,
             industries: [],
             coverUrl: w.coverUrl,
+            type: w.type,
           },
         ]
       : [],

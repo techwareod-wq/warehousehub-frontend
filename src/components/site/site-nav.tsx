@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { GlassNav, GlassNavLink, glassButton, glassSurface } from "@/components/glass"
 import { cn } from "@/lib/utils"
-import { Wordmark } from "./wordmark"
 
 /**
  * The site bar: a floating glass bar inset from the screen edge. On the home
@@ -38,7 +38,6 @@ export function SiteNav({
   }, [])
 
   const tabs = [
-    { href: "/search", label: "Warehouses", show: canSearch },
     { href: "/explore", label: "Explore", show: canSearch },
     { href: "/find", label: "Finder", show: canSearch && process.env.NEXT_PUBLIC_ENABLE_FINDER === "true" }, // FINDER (remove to uninstall)
     { href: "/nexus", label: "Nexus Engine", show: true },
@@ -62,8 +61,8 @@ export function SiteNav({
           raised={scrolled || open}
           className="flex h-12 w-full items-center justify-between gap-4 rounded-full pr-2 pl-4 sm:pl-5"
         >
-          <Link href="/" className="gl-focus rounded-full py-1 transition-opacity hover:opacity-90" aria-label="Nexus home">
-            <Wordmark />
+          <Link href="/" className="gl-focus shrink-0 rounded-full py-1 transition-opacity hover:opacity-90" aria-label="Nexus home">
+            <Image src="/logo1.png" alt="Nexus" width={949} height={263} preload unoptimized className="block h-8 w-[116px] max-w-none" />
           </Link>
 
           <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">

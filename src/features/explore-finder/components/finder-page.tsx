@@ -14,6 +14,7 @@ import { FiltersPanel } from "./filters-panel"
 import { CardSkeleton, Notice } from "./result-states"
 import { FinderCard } from "./finder-card"
 import { FinderMap } from "./finder-map"
+import { TypeLegend } from "./type-legend"
 
 /**
  * EXPERIMENTAL warehouse finder, Discover-style: filters | results | map.
@@ -112,7 +113,7 @@ export function FinderPage() {
               onClick={() => setView(v)}
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-3 py-1 capitalize",
-                view === v ? "bg-[#F5B82E] text-[#05070d]" : "text-white/70 hover:text-white",
+                view === v ? "bg-[#3b82f6] text-white" : "text-white/70 hover:text-white",
               )}
             >
               {v === "list" ? <List className="size-3.5" /> : <MapIcon className="size-3.5" />} {v}
@@ -167,6 +168,7 @@ export function FinderPage() {
             {stats}
           </div>
         )}
+        <TypeLegend className="pointer-events-none absolute bottom-3 left-3" />
       </FinderMap>
     </div>
   )

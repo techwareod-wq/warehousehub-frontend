@@ -24,7 +24,7 @@ export function ClusterCard({ cluster, className }: { cluster: Cluster; classNam
   return (
     <Link
       href={href}
-      className={cn("group relative block overflow-hidden bg-site-ink outline-offset-[-4px]", className)}
+      className={cn("gl-surface gl-plain gl-lift gl-accent-edge gl-focus group relative block overflow-hidden rounded-[24px]", className)}
       aria-label={`${cluster.name}${place ? `, ${place}` : ""}: ${cluster.listings} listing${cluster.listings === 1 ? "" : "s"}, ${formatRateRange(cluster.rateMin, cluster.rateMax)}`}
     >
       <div className="aspect-[5/4] overflow-hidden sm:aspect-[3/4]">
@@ -50,8 +50,8 @@ export function ClusterCard({ cluster, className }: { cluster: Cluster; classNam
 
       <div className="absolute inset-x-6 top-6">
         <h3 className="font-heading text-3xl leading-none font-bold tracking-tight text-white uppercase">{cluster.name}</h3>
-        {place && <p className="mt-2 text-[11px] font-medium tracking-wide text-white/80 uppercase">{place}</p>}
-        <p className="mt-2 text-xs font-bold text-site-cyan">{formatRateRange(cluster.rateMin, cluster.rateMax)}</p>
+        {place && <p className="mt-2 text-xs font-medium tracking-wide text-white/80 uppercase">{place}</p>}
+        <p className="mt-2 text-xs font-bold text-glass-accent-text">{formatRateRange(cluster.rateMin, cluster.rateMax)}</p>
         {hubs.length > 0 && (
           <p className="mt-3 text-xs leading-relaxed text-white/75">
             {hubs.join(" · ")}
@@ -61,12 +61,12 @@ export function ClusterCard({ cluster, className }: { cluster: Cluster; classNam
       </div>
 
       <div className="absolute bottom-6 left-6 flex items-end gap-3">
-        <span className="text-[10px] tracking-[0.2em] text-white/80 uppercase [writing-mode:vertical-rl] rotate-180">Listings</span>
+        <span className="text-xs tracking-[0.2em] text-white/80 uppercase [writing-mode:vertical-rl] rotate-180">Listings</span>
         <span className="font-heading text-5xl leading-none font-bold text-white">{cluster.listings}</span>
       </div>
       <span
         aria-hidden
-        className="absolute right-6 bottom-6 flex size-10 items-center justify-center rounded-full border border-white/40 text-white backdrop-blur-md transition-colors group-hover:bg-white group-hover:text-site-ink"
+        className="absolute right-6 bottom-6 flex size-10 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white transition-colors group-hover:border-glass-accent group-hover:bg-glass-accent group-hover:text-white"
       >
         <ArrowUpRight className="size-4" />
       </span>

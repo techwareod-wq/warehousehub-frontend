@@ -1,6 +1,6 @@
-import Link from "next/link"
 import { Check, FileText, MapPin, Ruler } from "lucide-react"
 import { Badge } from "@/components/ui"
+import { GlassButtonLink, GlassPanel } from "@/components/glass"
 import { StaticPin } from "@/components/maps/static-pin"
 import { formatAreaSqft } from "@/lib/format"
 import { formatRate } from "@/features/search"
@@ -18,7 +18,7 @@ function NodeSection({ node, depth = 0 }: { node: PublicNode; depth?: number }) 
     <div className={depth > 0 ? "border-l border-border pl-4" : ""}>
       {depth > 0 && (
         <p className="flex items-center gap-1.5 text-sm font-medium">
-          <Check className="size-4 text-green-400" />
+          <Check className="size-4 text-glass-accent-text" />
           {node.name}
         </p>
       )}
@@ -26,7 +26,7 @@ function NodeSection({ node, depth = 0 }: { node: PublicNode; depth?: number }) 
         <dl className="mt-2 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
           {node.fields.map((f) => (
             <div key={f.key} className="flex justify-between gap-3 border-b border-dashed border-border py-1">
-              <dt className="text-muted-foreground">{f.name}</dt>
+              <dt className="text-glass-text-3">{f.name}</dt>
               <dd className="text-right font-medium">{f.display}</dd>
             </div>
           ))}
@@ -56,12 +56,12 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
       {cover && (
         <div className="grid gap-2 sm:grid-cols-[2fr_1fr]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cover.url} alt={cover.caption || listing.name} className="aspect-[16/10] w-full rounded-3xl object-cover" />
+          <img src={cover.url} alt={cover.caption || listing.name} className="aspect-[16/10] w-full rounded-[24px] border border-white/10 object-cover" />
           {rest.length > 0 && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
               {rest.slice(0, 2).map((p) => (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={p.url} src={p.url} alt={p.caption || listing.name} className="aspect-[16/10] w-full rounded-2xl object-cover" />
+                <img key={p.url} src={p.url} alt={p.caption || listing.name} className="aspect-[16/10] w-full rounded-[18px] border border-white/10 object-cover" />
               ))}
             </div>
           )}
@@ -70,7 +70,7 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
 
       <header className="flex flex-col gap-3">
         <h1 className="font-heading text-4xl leading-tight tracking-tight sm:text-5xl">{listing.name}</h1>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-glass-text-3">
           {place && (
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="size-4" />
@@ -85,7 +85,7 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
             </span>
           )}
         </div>
-        <p className="font-heading text-2xl">{formatRate(listing.rate)}</p>
+        <p className="font-heading text-2xl text-glass-accent-text">{formatRate(listing.rate)}</p>
         {listing.industries.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {listing.industries.map((i) => (
@@ -99,7 +99,7 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
 
       {listing.description && <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line">{listing.description}</p>}
 
-      <section className="glass flex flex-col gap-4 rounded-3xl p-6 sm:p-8">
+      <GlassPanel as="section" className="flex flex-col gap-4 p-6 sm:p-8">
         <h2 className="font-heading text-3xl tracking-tight">Facilities & specifications</h2>
         {rootFields && rootFields.fields.length > 0 && <NodeSection node={{ ...rootFields, children: [] }} />}
         <div className="flex flex-col gap-4">
@@ -107,19 +107,19 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
             <NodeSection key={c.key} node={c} depth={1} />
           ))}
         </div>
-      </section>
+      </GlassPanel>
 
       {listing.docs.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="font-heading text-2xl tracking-tight">Documents</h2>
-          <ul className="flex flex-col gap-1.5 text-sm">
+          <ul className="flex flex-wrap gap-2 text-sm">
             {listing.docs.map((d) => (
               <li key={d.url}>
                 <a
                   href={d.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 underline underline-offset-4 hover:no-underline"
+                  className="gl-chip gl-focus h-9 px-4"
                 >
                   <FileText className="size-4" />
                   {d.caption || DOC_LABELS[d.docType] || "Document"}
@@ -133,14 +133,16 @@ export function ListingView({ listing, industryNames }: { listing: Listing; indu
       {listing.point && (
         <section className="flex flex-col gap-2">
           <h2 className="font-heading text-2xl tracking-tight">Location</h2>
-          <StaticPin point={listing.point} />
-          <p className="text-xs text-muted-foreground">The pin shows the approximate location. The exact address is shared on enquiry.</p>
+          <GlassPanel className="overflow-hidden p-2">
+            <StaticPin point={listing.point} />
+          </GlassPanel>
+          <p className="text-xs text-glass-text-3">The pin shows the approximate location. The exact address is shared on enquiry.</p>
         </section>
       )}
 
-      <Link href="/search" className="text-sm text-muted-foreground hover:text-foreground">
+      <GlassButtonLink href="/search" variant="ghost" size="sm" className="self-start">
         ← Back to search
-      </Link>
+      </GlassButtonLink>
     </article>
   )
 }

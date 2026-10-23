@@ -15,6 +15,8 @@ export interface ExploreWarehouse {
   ratePerSqft: number | null
   industries: string[]
   coverUrl: string
+  /** "general" | "ftwz" | "bonded" when known (the explore finder's results carry it), for the pin colour. */
+  type?: string
 }
 
 /** Server-side filters (city is applied in the browser). */

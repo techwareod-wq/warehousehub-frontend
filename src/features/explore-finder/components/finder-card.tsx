@@ -7,6 +7,7 @@ import { forwardRef } from "react"
 import { MapPin } from "lucide-react"
 import { formatRate } from "@/features/search"
 import { formatNumber } from "@/lib/format"
+import { typeBadge, wtAttr } from "@/lib/warehouse-type"
 import { TYPE_LABELS, type FinderWarehouse } from "../entities/finder.entity"
 import { MapThumb } from "./map-thumb"
 
@@ -76,11 +77,16 @@ export const FinderCard = forwardRef<
       <div className="flex flex-col @min-[440px]:flex-row">
         <MapThumb
           point={w.loc}
+          type={w.type}
           className="aspect-[2.2/1] w-full shrink-0 rounded-none border-0 @min-[440px]:aspect-auto @min-[440px]:min-h-[232px] @min-[440px]:w-[36%]"
         />
         <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
           <div className="flex items-center gap-2">
-            {type && <span className="rounded-full border border-white/15 bg-white/8 px-2.5 py-0.5 text-xs font-semibold text-white/90">{type}</span>}
+            {type && (
+              <span data-wt={wtAttr(w.type)} className={typeBadge(w.type)}>
+                {type}
+              </span>
+            )}
             <span className="font-mono text-xs font-medium tracking-wider text-white/60 uppercase">{w.shortId}</span>
           </div>
           <div className="flex min-w-0 flex-col gap-1">
@@ -109,7 +115,7 @@ export const FinderCard = forwardRef<
               </ul>
             )}
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[15px] font-bold text-[#f9cc63]">{rentOf(w)}</span>
+              <span className="text-[15px] font-bold text-[#60a5fa]">{rentOf(w)}</span>
               {/* The card itself opens the quick view; this is its visible affordance, not a separate tab stop. */}
               <span aria-hidden className="xf-pill inline-flex h-8 shrink-0 items-center rounded-full px-3.5 text-[13px] font-semibold">
                 Details

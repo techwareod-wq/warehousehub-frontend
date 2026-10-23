@@ -12,5 +12,10 @@ export const metadata: Metadata = {
 export default async function ExploreRoute() {
   if (!(await hasSiteFeature("search"))) return <FeatureNotIncluded what="Search" />
   const catalog = await loadFilterCatalog()
-  return <GlobeExplorer catalog={catalog} />
+  // .gl-classic keeps Explore on its own palette (globals.css); `contents` adds no box.
+  return (
+    <div className="gl-classic contents">
+      <GlobeExplorer catalog={catalog} />
+    </div>
+  )
 }

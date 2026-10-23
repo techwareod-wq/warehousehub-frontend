@@ -31,6 +31,8 @@ import {
 } from "@/features/explore-finder" // EXPLORE-FILTERS (remove to uninstall)
 import { formatAreaSqft } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { addClusterRingImages, CLUSTER_RING_IMAGE, clusterRingSize } from "@/lib/cluster-donut"
+import { TYPE_CLUSTER_PROPERTIES, typeColorExpression, UNKNOWN_TYPE_FILL, wtAttr } from "@/lib/warehouse-type"
 import { exploreApi } from "../api/explore.api"
 import type { ExploreFilters, ExploreWarehouse } from "../entities/explore.entity"
 
@@ -52,7 +54,7 @@ const ENTER_MAP_ZOOM = 4
 /** The globe flattens into Mercator between these zooms; basemap labels show from FLAT_FROM. */
 const FLAT_FROM = 3.5
 const FLAT_TO = 5.2
-const GOLD = "#F5B82E"
+const ACCENT = "#3b82f6"
 const SPACE = "#05070d"
 const LAND = "#1a1d24"
 const BORDER = "#3a3f4a"
@@ -194,7 +196,7 @@ function toGeoJSON(list: ExploreWarehouse[]): Parameters<GeoJSONSource["setData"
     features: list.map((w) => ({
       type: "Feature",
       geometry: { type: "Point", coordinates: [w.lng, w.lat] },
-      properties: { id: w.shortId },
+      properties: { id: w.shortId, type: w.type ?? "" },
     })),
   }
 }
@@ -251,68 +253,52 @@ function darkenFallback(map: MapLibreMap) {
 function addWarehouseLayers(map: MapLibreMap) {
   // Also runs after a fallback restyle, which can land before or after the first "load".
   if (map.getSource(SOURCE)) return
-  map.addSource(SOURCE, { type: "geojson", data: toGeoJSON([]), cluster: true, clusterRadius: 55, clusterMaxZoom: 14 })
+  map.addSource(SOURCE, {
+    type: "geojson",
+    data: toGeoJSON([]),
+    cluster: true,
+    clusterRadius: 55,
+    clusterMaxZoom: 14,
+    clusterProperties: TYPE_CLUSTER_PROPERTIES,
+  })
+  // Warehouse type colour code: pins in their type's colour, cluster rings split between the types inside.
+  // Without the finder there's no type on the markers, so they keep the accent blue.
+  const fallback = exploreFiltersEnabled ? UNKNOWN_TYPE_FILL : ACCENT
+  const pinColor = typeColorExpression(fallback)
   const isCluster: ExpressionSpecification = ["has", "point_count"]
-  map.addLayer({
-    id: "cluster-glow",
-    type: "circle",
-    source: SOURCE,
-    filter: isCluster,
-    paint: { "circle-color": GOLD, "circle-radius": ["+", CLUSTER_RADIUS, 12], "circle-blur": 1, "circle-opacity": 0.25 },
-  })
-  map.addLayer({
-    id: "cluster-ring",
-    type: "circle",
-    source: SOURCE,
-    filter: isCluster,
-    paint: {
-      "circle-radius": ["+", CLUSTER_RADIUS, 4],
-      "circle-opacity": 0,
-      "circle-stroke-width": 1,
-      "circle-stroke-color": GOLD,
-      "circle-stroke-opacity": 0.45,
-    },
-  })
+  // Clusters: a ring split equally between the types inside (cluster-donut.ts), with the count in the middle.
+  addClusterRingImages(map, fallback)
   map.addLayer({
     id: "clusters",
-    type: "circle",
-    source: SOURCE,
-    filter: isCluster,
-    paint: {
-      "circle-color": GOLD,
-      "circle-opacity": 0.35,
-      "circle-radius": CLUSTER_RADIUS,
-      "circle-stroke-width": 1,
-      "circle-stroke-color": GOLD,
-      "circle-stroke-opacity": 0.9,
-    },
-  })
-  map.addLayer({
-    id: "cluster-count",
     type: "symbol",
     source: SOURCE,
     filter: isCluster,
     layout: {
+      "icon-image": CLUSTER_RING_IMAGE,
+      "icon-size": clusterRingSize(CLUSTER_RADIUS),
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
       "text-field": ["get", "point_count_abbreviated"],
       "text-font": ["Noto Sans Regular"],
       "text-size": 13,
       "text-allow-overlap": true,
+      "text-ignore-placement": true,
     },
-    paint: { "text-color": "#fdf3dc", "text-halo-color": "rgba(5,7,13,0.6)", "text-halo-width": 1 },
+    paint: { "text-color": "#e0ecff" },
   })
   map.addLayer({
     id: "point-glow",
     type: "circle",
     source: SOURCE,
     filter: UNCLUSTERED,
-    paint: { "circle-color": GOLD, "circle-radius": 12, "circle-blur": 1, "circle-opacity": 0.35 },
+    paint: { "circle-color": pinColor, "circle-radius": 12, "circle-blur": 1, "circle-opacity": 0.35 },
   })
   map.addLayer({
     id: "point-highlight",
     type: "circle",
     source: SOURCE,
     filter: ["all", UNCLUSTERED, ["==", ["get", "id"], ""]],
-    paint: { "circle-color": "rgba(255,255,255,0.9)", "circle-radius": 14, "circle-stroke-width": 3, "circle-stroke-color": GOLD },
+    paint: { "circle-color": "rgba(255,255,255,0.9)", "circle-radius": 14, "circle-stroke-width": 3, "circle-stroke-color": pinColor },
   })
   map.addLayer({
     id: "points",
@@ -320,11 +306,11 @@ function addWarehouseLayers(map: MapLibreMap) {
     source: SOURCE,
     filter: UNCLUSTERED,
     paint: {
-      "circle-color": GOLD,
+      "circle-color": pinColor,
       "circle-opacity": 0.95,
       "circle-radius": ["interpolate", ["linear"], ["zoom"], 2, 3.5, 10, 6],
       "circle-stroke-width": 1,
-      "circle-stroke-color": "#fdf3dc",
+      "circle-stroke-color": "#e0ecff",
       "circle-stroke-opacity": 0.7,
     },
   })
@@ -466,6 +452,7 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
   const finderOn = exploreFiltersEnabled && mode === "map"
   const markers = finderOn ? finderMarkers : filtered
   const highlightId = hoverId ?? (finderOn ? finderSelected?.id : null) ?? ""
+  const hoverMarker = useMemo(() => (hoverId ? (markers.find((w) => w.shortId === hoverId) ?? null) : null), [markers, hoverId])
   const onFinderResults = useCallback((list: FinderWarehouse[], scope: string | null) => {
     setFinderResults(list)
     setFinderResultScope(scope)
@@ -543,11 +530,16 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
 
   function searchCity(e: React.FormEvent) {
     e.preventDefault()
-    const q = heroCity.trim().toLowerCase()
+    goToCity(heroCity)
+  }
+
+  /** The hero's search: the typed (or picked) city, or the whole map when the box is empty. */
+  function goToCity(text: string) {
+    const q = text.trim().toLowerCase()
     if (!q) return enterMap()
     const match = cities.find((c) => c.toLowerCase() === q) ?? cities.find((c) => c.toLowerCase().includes(q))
     if (!match) {
-      setHeroMiss(`No warehouses in “${heroCity.trim()}” yet.`)
+      setHeroMiss(`No warehouses in “${text.trim()}” yet.`)
       return
     }
     setHeroMiss("")
@@ -694,6 +686,12 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
         m.on("mouseenter", layer, () => (m.getCanvas().style.cursor = "pointer"))
         m.on("mouseleave", layer, () => (m.getCanvas().style.cursor = ""))
       }
+      // Hovering a pin labels it with its area (and highlights its card).
+      m.on("mousemove", "points", (e) => {
+        const id = e.features?.[0]?.properties.id
+        if (typeof id === "string") setHoverId((cur) => (cur === id ? cur : id))
+      })
+      m.on("mouseleave", "points", () => setHoverId(null))
     })
 
     return () => {
@@ -756,6 +754,42 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
     }
   }, [mapReady, popupEl, popupWarehouse])
 
+  // The hovered pin's area, floating just above it (a chip; never catches the pointer).
+  useEffect(() => {
+    const map = mapRef.current
+    const lib = libRef.current
+    if (!mapReady || !map || !lib || !hoverMarker || hoverMarker.totalSqm <= 0 || hoverMarker.shortId === popupId) return
+    // MapLibre's own (unlayered) popup CSS beats Tailwind's layered utilities,
+    // so the wrapper is reset with `!` and the chip is our own element.
+    const chip = document.createElement("span")
+    chip.className =
+      "flex items-center gap-1.5 rounded-full border border-white/15 bg-[rgb(14_22_40/90%)] px-3 py-1 text-xs font-semibold whitespace-nowrap text-white shadow-lg backdrop-blur-md"
+    const wt = wtAttr(hoverMarker.type)
+    if (wt) {
+      // A dot in the pin's type colour.
+      const dot = document.createElement("span")
+      dot.dataset.wt = wt
+      dot.className = "wt-dot size-2 shrink-0 rounded-full"
+      chip.append(dot)
+    }
+    chip.append(formatAreaSqft(hoverMarker.totalSqm))
+    const label = new lib.Popup({
+      anchor: "bottom",
+      offset: 16,
+      closeButton: false,
+      closeOnClick: false,
+      focusAfterOpen: false,
+      className:
+        "pointer-events-none [&_.maplibregl-popup-content]:pointer-events-none! [&_.maplibregl-popup-content]:bg-transparent! [&_.maplibregl-popup-content]:p-0! [&_.maplibregl-popup-content]:shadow-none! [&_.maplibregl-popup-tip]:hidden!",
+    })
+      .setLngLat([hoverMarker.lng, hoverMarker.lat])
+      .setDOMContent(chip)
+      .addTo(map)
+    return () => {
+      label.remove()
+    }
+  }, [mapReady, hoverMarker, popupId])
+
   // ---------- Render ----------
   const industries = catalog?.industries ?? []
   const rateMax = baseline?.rateMax ?? 0
@@ -808,7 +842,7 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
           <ul className="flex flex-col gap-2 text-sm text-white/85">
             {["Go live in weeks, not months", "Grade A, cold chain and land parcels", "Transparent ₹/sq ft pricing"].map((b) => (
               <li key={b} className="flex items-center gap-2.5">
-                <Check className="size-4 shrink-0 text-[#F5B82E]" />
+                <Check className="size-4 shrink-0 text-[#3b82f6]" />
                 {b}
               </li>
             ))}
@@ -819,8 +853,13 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
               <Input
                 value={heroCity}
                 onChange={(e) => {
-                  setHeroCity(e.target.value)
+                  const v = e.target.value
+                  setHeroCity(v)
                   setHeroMiss("")
+                  // Picking a suggestion (not typing) searches it straight away.
+                  const ev = e.nativeEvent as InputEvent
+                  const picked = !ev.inputType || ev.inputType === "insertReplacementText"
+                  if (picked && cities.some((c) => c.toLowerCase() === v.trim().toLowerCase())) goToCity(v)
                 }}
                 list="explore-cities"
                 aria-label="Search a city"
@@ -844,14 +883,15 @@ export function GlobeExplorer({ catalog }: { catalog: FilterCatalog | null }) {
             </Button>
           </form>
           {heroMiss && (
-            <p role="status" className="text-xs text-amber-300">
+            <p role="status" className="text-xs text-sky-300">
               {heroMiss}
             </p>
           )}
           <Button
             size="lg"
-            className="h-11 self-start rounded-none bg-[#F5B82E] px-6 font-semibold text-[#05070d] hover:bg-[#F5B82E]/90"
-            onClick={() => enterMap()}
+            className="h-11 self-start rounded-none bg-[#3b82f6] px-6 font-semibold text-white hover:bg-[#3b82f6]/90"
+            // A city in the box goes there; an empty box opens the whole map.
+            onClick={() => goToCity(heroCity)}
           >
             Explore warehouses
           </Button>

@@ -6,6 +6,7 @@ import { Globe, Loader2, Minus, Plus } from "lucide-react"
 import { formatNumber } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { MAP_FRAME } from "../lib/layout"
+import { TypeLegend } from "./type-legend"
 
 /**
  * Sits exactly over the map frame and lets clicks through to the map, except on
@@ -39,7 +40,7 @@ export function MapOverlay({
             </span>
             {stats && <span className="text-xs text-white/70">of {formatNumber(stats.total)} match your filters</span>}
           </div>
-          {loading && <Loader2 aria-label="Updating results" className="size-4 shrink-0 animate-spin text-[#f9cc63]" />}
+          {loading && <Loader2 aria-label="Updating results" className="size-4 shrink-0 animate-spin text-[#60a5fa]" />}
         </div>
         <div className="flex max-w-full flex-wrap items-center gap-2">
           <button
@@ -83,6 +84,8 @@ export function MapOverlay({
           <Minus className="size-4" />
         </button>
       </div>
+
+      <TypeLegend className="absolute bottom-3 left-3" />
     </div>
   )
 }

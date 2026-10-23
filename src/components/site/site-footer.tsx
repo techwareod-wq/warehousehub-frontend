@@ -10,7 +10,7 @@ const NAV = [
   { href: "/enquire", label: "Contact" },
 ]
 
-const LINK = "gl-focus w-fit rounded-sm transition-colors hover:text-glass-gold-text"
+const LINK = "gl-focus w-fit rounded-sm transition-colors hover:text-glass-accent-text"
 
 export function SiteFooter() {
   return (

@@ -1,4 +1,4 @@
-/* EXPLORE-FILTERS: the finder's "liquid glass" surfaces (Nexus navy + gold).
+/* EXPLORE-FILTERS: the finder's "liquid glass" surfaces (Nexus navy + blue).
    Plain, unlayered CSS: it wins over Tailwind's layered utilities, so every
    state of a surface (hover, on, focus) lives here, and layout stays in Tailwind. */
 
@@ -7,8 +7,8 @@
 .xf {
   --xf-navy: var(--gl-navy, #0a1220);
   --xf-solid: var(--gl-solid, #131d31);
-  --xf-gold: var(--gl-gold, #f5b82e);
-  --xf-gold-text: var(--gl-gold-text, #f9cc63);
+  --xf-accent: var(--gl-accent, #3b82f6);
+  --xf-accent-text: var(--gl-accent-text, #60a5fa);
   --xf-line: var(--gl-border, rgb(255 255 255 / 14%));
   --xf-ease: var(--gl-ease, 180ms cubic-bezier(0.2, 0.8, 0.2, 1));
   color: #fff;
@@ -19,7 +19,7 @@
   background-color: var(--xf-navy, #0a1220);
   background-image:
     radial-gradient(55% 50% at 12% 18%, rgb(59 130 246 / 18%), transparent 70%),
-    radial-gradient(45% 45% at 88% 88%, rgb(245 184 46 / 10%), transparent 70%),
+    radial-gradient(45% 45% at 88% 88%, rgb(59 130 246 / 10%), transparent 70%),
     radial-gradient(40% 40% at 55% 0%, rgb(59 130 246 / 12%), transparent 70%);
 }
 
@@ -41,7 +41,7 @@
 }
 
 /* EXPLORE-FILTERS: the filters column is the page's anchor: a stronger surface,
-   a thin gold line along the top, and a gold glow while any filter is active. */
+   a thin blue line along the top, and a blue glow while any filter is active. */
 .xf-filters {
   position: relative;
   background-color: rgb(255 255 255 / 10%);
@@ -56,15 +56,15 @@
   left: 20px;
   right: 20px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgb(245 184 46 / 90%), transparent);
+  background: linear-gradient(90deg, transparent, rgb(59 130 246 / 90%), transparent);
   pointer-events: none;
 }
 .xf-filters[data-active="true"] {
-  border-color: rgb(245 184 46 / 45%);
+  border-color: rgb(59 130 246 / 45%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 18%),
-    0 0 0 1px rgb(245 184 46 / 15%),
-    0 0 32px rgb(245 184 46 / 16%),
+    0 0 0 1px rgb(59 130 246 / 15%),
+    0 0 32px rgb(59 130 246 / 16%),
     0 12px 40px rgb(0 0 0 / 35%);
 }
 
@@ -79,16 +79,16 @@
 
 /* EXPLORE-FILTERS: removable chips in the active-filters row. */
 .xf-chip {
-  background-color: rgb(245 184 46 / 22%);
-  border: 1px solid rgb(245 184 46 / 70%);
-  color: var(--xf-gold-text, #f9cc63);
+  background-color: rgb(59 130 246 / 22%);
+  border: 1px solid rgb(59 130 246 / 70%);
+  color: var(--xf-accent-text, #60a5fa);
 }
 .xf-chip > button {
-  color: var(--xf-gold-text, #f9cc63);
+  color: var(--xf-accent-text, #60a5fa);
   transition: background-color var(--xf-ease);
 }
 .xf-chip > button:hover {
-  background-color: rgb(245 184 46 / 30%);
+  background-color: rgb(59 130 246 / 30%);
 }
 
 /* The map's frame: glass border and depth around the canvas. */
@@ -99,7 +99,7 @@
     0 12px 40px rgb(0 0 0 / 35%);
 }
 
-/* Cards: a lift on hover, gold when their pin is hovered or selected. */
+/* Cards: a lift on hover, blue when their pin is hovered or selected. */
 .xf-card {
   cursor: pointer;
   transition:
@@ -117,10 +117,10 @@
   border-color: rgb(255 255 255 / 24%);
 }
 .xf-card[data-active="true"] {
-  border-color: rgb(245 184 46 / 75%);
+  border-color: rgb(59 130 246 / 75%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 18%),
-    0 0 0 1px rgb(245 184 46 / 45%),
+    0 0 0 1px rgb(59 130 246 / 45%),
     0 12px 40px rgb(0 0 0 / 35%);
 }
 
@@ -141,13 +141,13 @@
 }
 .xf-pill[aria-pressed="true"],
 .xf-pill[aria-checked="true"] {
-  background-color: rgb(245 184 46 / 22%);
-  border-color: rgb(245 184 46 / 70%);
-  color: var(--xf-gold-text, #f9cc63);
+  background-color: rgb(59 130 246 / 22%);
+  border-color: rgb(59 130 246 / 70%);
+  color: var(--xf-accent-text, #60a5fa);
   font-weight: 600; /* EXPLORE-FILTERS: selected reads clearly, not just by colour */
 }
 
-/* Segmented control: the track is glass, the chosen segment gold-tinted. */
+/* Segmented control: the track is glass, the chosen segment blue-tinted. */
 .xf-seg {
   background-color: rgb(255 255 255 / 5%);
   border: 1px solid var(--xf-line, rgb(255 255 255 / 14%));
@@ -166,10 +166,19 @@
 }
 .xf-seg > button[aria-pressed="true"],
 .xf-seg > button[aria-checked="true"] {
-  background-color: rgb(245 184 46 / 22%);
-  border-color: rgb(245 184 46 / 70%);
-  color: var(--xf-gold-text, #f9cc63);
+  background-color: rgb(59 130 246 / 22%);
+  border-color: rgb(59 130 246 / 70%);
+  color: var(--xf-accent-text, #60a5fa);
   font-weight: 700; /* EXPLORE-FILTERS */
+}
+/* The Type filter: each button takes its warehouse type's colour (data-wt, globals.css). */
+.xf-seg > button[data-wt]:not([aria-pressed="true"]):hover {
+  border-color: rgb(var(--wt) / 40%);
+}
+.xf-seg > button[data-wt][aria-pressed="true"] {
+  background-color: rgb(var(--wt) / 20%);
+  border-color: rgb(var(--wt) / 70%);
+  color: var(--wt-text);
 }
 
 /* Inputs and selects. */
@@ -188,7 +197,7 @@
   border-color: rgb(255 255 255 / 24%);
 }
 .xf-input:focus {
-  border-color: rgb(245 184 46 / 70%);
+  border-color: rgb(59 130 246 / 70%);
   background-color: rgb(255 255 255 / 9%);
 }
 .xf-input:disabled {
@@ -209,7 +218,7 @@
   transition: transform var(--xf-ease);
 }
 [aria-checked="true"] > .xf-switch {
-  background-color: var(--xf-gold, #f5b82e);
+  background-color: var(--xf-accent, #3b82f6);
 }
 [aria-checked="true"] > .xf-switch > span {
   transform: translateX(14px);
@@ -219,7 +228,7 @@
 .xf :focus-visible,
 .xf-popover :focus-visible,
 .xf-drawer :focus-visible {
-  outline: 2px solid var(--xf-gold, #f5b82e);
+  outline: 2px solid var(--xf-accent, #3b82f6);
   outline-offset: 2px;
 }
 

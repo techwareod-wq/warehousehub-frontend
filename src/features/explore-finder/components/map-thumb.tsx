@@ -5,11 +5,12 @@
 import { useEffect, useRef, useState } from "react"
 import { MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { typeFill } from "@/lib/warehouse-type"
 import type { LatLng } from "../entities/finder.entity"
 import { mapThumbnail } from "../lib/thumbnail"
 
 /** A still map image centred on the warehouse, rendered once the card scrolls near view. */
-export function MapThumb({ point, className }: { point: LatLng | null; className?: string }) {
+export function MapThumb({ point, type, className }: { point: LatLng | null; type?: string; className?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const [src, setSrc] = useState<{ key: string; url: string } | null>(null)
   const key = point ? `${point.lat},${point.lng}` : ""
@@ -52,7 +53,8 @@ export function MapThumb({ point, className }: { point: LatLng | null; className
       {point ? (
         <MapPin
           aria-hidden
-          className="absolute top-1/2 left-1/2 size-7 -translate-x-1/2 -translate-y-full fill-[#F5B82E] text-white drop-shadow-[0_2px_4px_rgb(0_0_0/60%)]"
+          className="absolute top-1/2 left-1/2 size-7 -translate-x-1/2 -translate-y-full text-white drop-shadow-[0_2px_4px_rgb(0_0_0/60%)]"
+          fill={typeFill(type)}
           strokeWidth={1.5}
         />
       ) : (

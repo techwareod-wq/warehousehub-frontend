@@ -66,8 +66,8 @@
   --color-site-band-to: var(--site-band-to);
   /* Liquid glass (defined under .site below). */
   --color-glass-navy: var(--gl-navy);
-  --color-glass-gold: var(--gl-gold);
-  --color-glass-gold-text: var(--gl-gold-text);
+  --color-glass-accent: var(--gl-accent);
+  --color-glass-accent-text: var(--gl-accent-text);
   --color-glass-text: var(--gl-text);
   --color-glass-text-2: var(--gl-text-2);
   --color-glass-text-3: var(--gl-text-3);
@@ -172,28 +172,30 @@ html:has(.dark) {
   --sidebar-ring: #5b8deb;
 }
 
-/* Public site: deep harbour navy with a dock-blue accent and teal bands.
+/* Public site: liquid glass on Nexus navy, blue the one strong accent.
    Scoped to .site (the (site) layout) so the admin theme is untouched; the
-   html:has() arm reaches portals (dialogs, popovers) opened from the site. */
+   html:has() arm reaches portals (dialogs, popovers, toasts) opened from the
+   site. The shadcn primitives read these, so they turn glass here too.
+   /explore keeps the previous palette (.gl-classic below). */
 .site,
 html:has(.site) {
-  --background: #0b1f2a;
+  --background: #0a1220;
   --foreground: #f3f7fa;
-  --card: #112431;
+  --card: rgb(255 255 255 / 6%);
   --card-foreground: #f3f7fa;
-  --popover: #0f2230;
+  --popover: #131d31;
   --popover-foreground: #f3f7fa;
   --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #17303f;
+  --secondary: rgb(255 255 255 / 8%);
   --secondary-foreground: #f3f7fa;
-  --muted: #142a38;
-  --muted-foreground: #a8b8c5;
-  --accent: #17303f;
+  --muted: rgb(255 255 255 / 6%);
+  --muted-foreground: rgb(255 255 255 / 70%);
+  --accent: rgb(255 255 255 / 10%);
   --accent-foreground: #f3f7fa;
-  --border: rgb(255 255 255 / 11%);
-  --input: rgb(255 255 255 / 18%);
-  --ring: #60a5fa;
+  --border: rgb(255 255 255 / 14%);
+  --input: rgb(255 255 255 / 16%);
+  --ring: #3b82f6;
   --radius: 0.75rem;
   --font-display: var(--font-outfit);
 
@@ -217,7 +219,7 @@ html:has(.site) {
   --gl-navy: #0a1220;
   --gl-glow-blue: rgb(59 130 246 / 18%);
   --gl-glow-blue-soft: rgb(59 130 246 / 12%);
-  --gl-glow-gold: rgb(245 184 46 / 10%);
+  --gl-glow-accent: rgb(34 211 238 / 8%);
   /* Solid fallbacks (no backdrop-filter / reduced transparency) */
   --gl-solid: #131d31;
   --gl-solid-strong: #18243a;
@@ -237,13 +239,13 @@ html:has(.site) {
   --gl-radius-panel: 24px;
   --gl-radius-input: 14px;
   --gl-radius-pill: 9999px;
-  /* Gold accent (selected / active / focus) */
-  --gl-gold: #f5b82e;
-  --gl-gold-text: #f9cc63;
-  --gl-gold-surface: rgb(245 184 46 / 22%);
-  --gl-gold-surface-hover: rgb(245 184 46 / 30%);
-  --gl-gold-border: rgb(245 184 46 / 70%);
-  --gl-gold-glow: 0 0 0 1px rgb(245 184 46 / 45%), 0 0 28px rgb(245 184 46 / 16%);
+  /* Blue accent (selected / active / focus) */
+  --gl-accent: #3b82f6;
+  --gl-accent-text: #60a5fa;
+  --gl-accent-surface: rgb(59 130 246 / 22%);
+  --gl-accent-surface-hover: rgb(59 130 246 / 30%);
+  --gl-accent-border: rgb(59 130 246 / 70%);
+  --gl-accent-glow: 0 0 0 1px rgb(59 130 246 / 45%), 0 0 28px rgb(59 130 246 / 16%);
   /* Text */
   --gl-text: #fff;
   --gl-text-2: rgb(255 255 255 / 85%);
@@ -252,14 +254,32 @@ html:has(.site) {
   --gl-ease: 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* /explore (both the globe and the finder view) keeps the palette it was
+   designed on: the explore route wraps itself in .gl-classic. */
+.gl-classic,
+html:has(.gl-classic) {
+  --background: #0b1f2a;
+  --card: #112431;
+  --popover: #0f2230;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #17303f;
+  --muted: #142a38;
+  --muted-foreground: #a8b8c5;
+  --accent: #17303f;
+  --border: rgb(255 255 255 / 11%);
+  --input: rgb(255 255 255 / 18%);
+  --ring: #60a5fa;
+}
+
 .site {
   font-family: var(--font-jakarta), var(--font-sans), sans-serif;
 }
 
 /* ── Liquid glass ─────────────────────────────────────────────────────────
    The public site's surface system, lifted from the Explore finder
-   (explore-finder.css): deep Nexus navy, soft blue/gold glows, frosted white
-   surfaces and a gold accent for selected / active states. Components in
+   (explore-finder.css): deep Nexus navy, soft blue/cyan glows, frosted white
+   surfaces and a blue accent for selected / active states. Components in
    src/components/glass use these classes; pages can use them directly.
    Rules: at most two backdrop-filters stacked; repeated list items use
    .gl-plain (no blur), only their container blurs. The --gl-* tokens sit in
@@ -280,7 +300,7 @@ html:has(.site) {
     pointer-events: none;
     background-image:
       radial-gradient(55% 50% at 12% 18%, var(--gl-glow-blue), transparent 70%),
-      radial-gradient(45% 45% at 88% 88%, var(--gl-glow-gold), transparent 70%),
+      radial-gradient(45% 45% at 88% 88%, var(--gl-glow-accent), transparent 70%),
       radial-gradient(40% 40% at 55% 0%, var(--gl-glow-blue-soft), transparent 70%);
   }
 
@@ -309,14 +329,14 @@ html:has(.site) {
     border-radius: var(--gl-radius-panel);
   }
 
-  /* Selected / active: gold-tinted glass. */
-  .gl-gold {
-    background-color: var(--gl-gold-surface);
-    border-color: var(--gl-gold-border);
-    color: var(--gl-gold-text);
+  /* Selected / active: blue-tinted glass. */
+  .gl-accent {
+    background-color: var(--gl-accent-surface);
+    border-color: var(--gl-accent-border);
+    color: var(--gl-accent-text);
   }
 
-  /* Interaction: 2px lift with a brighter surface; optional gold edge. */
+  /* Interaction: 2px lift with a brighter surface; optional blue edge. */
   .gl-lift {
     transition:
       transform var(--gl-ease),
@@ -330,13 +350,13 @@ html:has(.site) {
     border-color: var(--gl-border-hover);
     box-shadow: var(--gl-highlight), var(--gl-shadow-lift);
   }
-  .gl-gold-edge:hover {
-    border-color: var(--gl-gold-border);
-    box-shadow: var(--gl-highlight), var(--gl-gold-glow), var(--gl-shadow-lift);
+  .gl-accent-edge:hover {
+    border-color: var(--gl-accent-border);
+    box-shadow: var(--gl-highlight), var(--gl-accent-glow), var(--gl-shadow-lift);
   }
   .gl-focus:focus-visible,
   .gl-focus-within:focus-within {
-    outline: 2px solid var(--gl-gold);
+    outline: 2px solid var(--gl-accent);
     outline-offset: 2px;
   }
 
@@ -366,13 +386,13 @@ html:has(.site) {
     opacity: 0.55;
   }
   .gl-btn-primary {
-    background: linear-gradient(135deg, var(--gl-gold-text), var(--gl-gold));
-    color: var(--gl-navy);
-    box-shadow: 0 4px 16px rgb(245 184 46 / 30%);
+    background: linear-gradient(135deg, var(--gl-accent), #2563eb);
+    color: #fff;
+    box-shadow: 0 4px 16px rgb(59 130 246 / 30%);
   }
   .gl-btn-primary:hover:not(:disabled) {
     filter: brightness(1.06);
-    box-shadow: 0 8px 24px rgb(245 184 46 / 45%);
+    box-shadow: 0 8px 24px rgb(59 130 246 / 45%);
   }
   .gl-btn-secondary {
     background-color: var(--gl-surface);
@@ -414,9 +434,9 @@ html:has(.site) {
   }
   .gl-input:focus {
     outline: none;
-    border-color: var(--gl-gold-border);
+    border-color: var(--gl-accent-border);
     background-color: rgb(255 255 255 / 9%);
-    box-shadow: 0 0 0 3px rgb(245 184 46 / 18%);
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 18%);
   }
   .gl-input:disabled {
     cursor: not-allowed;
@@ -448,10 +468,59 @@ html:has(.site) {
   }
   .gl-chip[aria-pressed="true"],
   .gl-chip[data-selected] {
-    background-color: var(--gl-gold-surface);
-    border-color: var(--gl-gold-border);
-    color: var(--gl-gold-text);
+    background-color: var(--gl-accent-surface);
+    border-color: var(--gl-accent-border);
+    color: var(--gl-accent-text);
     font-weight: 600;
+  }
+
+  /*
+   * Warehouse type colour code (src/lib/warehouse-type.ts holds the same hex
+   * values for the maps): General blue, FTWZ green, Bonded yellow. Anything
+   * with data-wt gets --wt (rgb channels) and --wt-text.
+   */
+  [data-wt="general"] {
+    --wt: 59 130 246;
+    --wt-text: #60a5fa;
+  }
+  [data-wt="ftwz"] {
+    --wt: 34 197 94;
+    --wt-text: #4ade80;
+  }
+  [data-wt="bonded"] {
+    --wt: 234 179 8;
+    --wt-text: #facc15;
+  }
+  /* A type pill. */
+  .wt-badge[data-wt] {
+    border: 1px solid rgb(var(--wt) / 45%);
+    background-color: rgb(var(--wt) / 15%);
+    color: var(--wt-text);
+  }
+  /* A type dot (legend, labels). */
+  .wt-dot[data-wt] {
+    background-color: rgb(var(--wt));
+    box-shadow: 0 0 8px rgb(var(--wt) / 60%);
+  }
+  /* An icon tile (home page). */
+  .wt-tile[data-wt] {
+    border-color: rgb(var(--wt) / 40%);
+    background-color: rgb(var(--wt) / 10%);
+    color: var(--wt-text);
+  }
+  /* A type-coded card's hover edge and glow. */
+  .gl-accent-edge[data-wt]:hover {
+    border-color: rgb(var(--wt) / 45%);
+    box-shadow: var(--gl-highlight), 0 0 28px rgb(var(--wt) / 16%), var(--gl-shadow-lift);
+  }
+  /* Selected type chips take their type's colour (Explore's segmented buttons: explore-finder.css). */
+  .gl-chip[data-wt][aria-pressed="true"] {
+    background-color: rgb(var(--wt) / 20%);
+    border-color: rgb(var(--wt) / 70%);
+    color: var(--wt-text);
+  }
+  .gl-chip[data-wt]:not([aria-pressed="true"]):hover {
+    border-color: rgb(var(--wt) / 40%);
   }
 
   /* Nav: the floating bar and its links. */
@@ -480,9 +549,9 @@ html:has(.site) {
     color: var(--gl-text);
   }
   .gl-nav-link[aria-current="page"] {
-    background-color: var(--gl-gold-surface);
-    border-color: var(--gl-gold-border);
-    color: var(--gl-gold-text);
+    background-color: var(--gl-accent-surface);
+    border-color: var(--gl-accent-border);
+    color: var(--gl-accent-text);
   }
 }
 
@@ -511,6 +580,61 @@ html:has(.site) {
   }
   .gl-page::before {
     background-image: none;
+  }
+}
+
+/* Shared primitives on the public site. The admin shares these components
+   (src/components/ui, src/components/common), so they are skinned here,
+   only under .site, instead of being edited; /explore (.gl-classic) keeps
+   its look. Portaled surfaces are reached through html:has(.site). */
+.site :is([data-slot="empty-state"], [data-slot="error-state"]):not(.gl-classic *) {
+  background-color: var(--gl-surface-subtle);
+  border: 1px solid var(--gl-border);
+  border-radius: var(--gl-radius-panel);
+  box-shadow: var(--gl-highlight), var(--gl-shadow-sm);
+  -webkit-backdrop-filter: var(--gl-blur);
+  backdrop-filter: var(--gl-blur);
+}
+.site [data-slot="error-state"]:not(.gl-classic *) {
+  border-color: rgb(248 113 113 / 35%);
+}
+html:has(.site):not(:has(.gl-classic))
+  :is([data-slot="dialog-content"], [data-slot="sheet-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"]) {
+  background-color: rgb(19 29 49 / 88%);
+  border: 1px solid var(--gl-border);
+  box-shadow: var(--gl-highlight), var(--gl-shadow);
+  -webkit-backdrop-filter: var(--gl-blur);
+  backdrop-filter: var(--gl-blur);
+}
+html:has(.site):not(:has(.gl-classic)) [data-slot="sheet-content"] {
+  border-radius: 0 var(--gl-radius-panel) var(--gl-radius-panel) 0;
+}
+/* Overlays only dim: the surface above them is the one blur. */
+html:has(.site):not(:has(.gl-classic)) :is([data-slot="dialog-overlay"], [data-slot="sheet-overlay"]) {
+  background-color: rgb(0 0 0 / 50%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html:has(.site):not(:has(.gl-classic)) [data-sonner-toast] {
+  background-color: rgb(19 29 49 / 92%) !important;
+  border: 1px solid var(--gl-border) !important;
+  border-radius: var(--gl-radius-input) !important;
+  box-shadow: var(--gl-highlight), var(--gl-shadow) !important;
+  color: var(--gl-text) !important;
+  -webkit-backdrop-filter: var(--gl-blur);
+  backdrop-filter: var(--gl-blur);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site :is([data-slot="empty-state"], [data-slot="error-state"]):not(.gl-classic *) {
+    background-color: var(--gl-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  html:has(.site):not(:has(.gl-classic))
+    :is([data-slot="dialog-content"], [data-slot="sheet-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-sonner-toast]) {
+    background-color: var(--gl-solid) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 

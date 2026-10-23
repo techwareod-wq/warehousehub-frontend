@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Button, Input } from "@/components/ui"
+import { GlassButton, GlassInput } from "@/components/glass"
 import { FormRow, LoadingRows } from "@/components/common"
 import { browserApi, errorMessage } from "@/core/api"
 import { profileApi } from "../api/users.api"
@@ -48,17 +48,17 @@ export function ProfileForm() {
       }}
     >
       <FormRow label="Email">
-        <Input value={profile.email} disabled />
+        <GlassInput value={profile.email} disabled />
       </FormRow>
       <FormRow label="Phone" hint="Used when you send an enquiry.">
-        <Input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="+91 98xxxxxxxx" />
+        <GlassInput value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="+91 98xxxxxxxx" />
       </FormRow>
       <FormRow label="Company">
-        <Input value={company} onChange={(e) => setCompany(e.target.value)} />
+        <GlassInput value={company} onChange={(e) => setCompany(e.target.value)} />
       </FormRow>
-      <Button type="submit" disabled={pending} className="self-start">
+      <GlassButton type="submit" disabled={pending} className="self-start">
         {pending ? "Saving…" : "Save"}
-      </Button>
+      </GlassButton>
     </form>
   )
 }

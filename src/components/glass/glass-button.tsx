@@ -17,7 +17,7 @@ const SIZE: Record<GlassButtonSize, string> = {
   icon: "size-10",
 }
 
-/** Classes for a glass button: primary (gold), secondary (glass) or ghost. */
+/** Classes for a glass button: primary (blue), secondary (glass) or ghost. */
 export function glassButton({
   variant = "primary",
   size = "md",
