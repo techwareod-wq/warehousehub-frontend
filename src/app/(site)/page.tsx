@@ -24,7 +24,7 @@ import { HomeSearchBar } from "@/features/home-search"
 import { loadClusterOverview } from "@/features/clusters/lib/server-clusters"
 import { HomeMap } from "@/features/search"
 import { loadFilterCatalog } from "@/features/search/lib/server-catalog"
-import { hasSiteFeature } from "@/features/users/lib/server-access"
+import { canOfferEnquiry, hasSiteFeature } from "@/features/users/lib/server-access"
 import { cn } from "@/lib/utils"
 
 const FEATURED_CLUSTERS = 6
@@ -93,7 +93,7 @@ const INDUSTRIES = [
 ]
 
 export default async function HomePage() {
-  const [canSearch, canEnquire] = await Promise.all([hasSiteFeature("search"), hasSiteFeature("enquiries")])
+  const [canSearch, canEnquire] = await Promise.all([hasSiteFeature("search"), canOfferEnquiry()])
   const catalog = canSearch ? await loadFilterCatalog() : null
   return (
     <div className="-mb-px flex flex-col">

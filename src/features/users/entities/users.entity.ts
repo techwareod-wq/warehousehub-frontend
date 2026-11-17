@@ -29,6 +29,13 @@ export type SiteFeature = "search" | "ai_search" | "listings" | "enquiries"
 
 export const SITE_FEATURES: SiteFeature[] = ["search", "ai_search", "listings", "enquiries"]
 
+/**
+ * Features every visitor has, signed in or not: crunch serves their routes
+ * anonymously (WithOptionalJWT). ai_search (LLM cost, per-user rate limit)
+ * and enquiries (no captcha) still need sign-in plus a grant.
+ */
+export const PUBLIC_SITE_FEATURES: SiteFeature[] = ["search", "listings"]
+
 export interface FeaturesChange {
   userId: string
   features: SiteFeature[]

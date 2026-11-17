@@ -5,7 +5,7 @@ import { Reveal } from "@/components/site/reveal"
 import { glassSurface } from "@/components/glass"
 import { CONTACT } from "@/core/config/brand"
 import { EnquiryForm } from "@/features/enquiries"
-import { hasSiteFeature } from "@/features/users/lib/server-access"
+import { canOfferEnquiry } from "@/features/users/lib/server-access"
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -19,7 +19,8 @@ const ROWS = [
 ]
 
 export default async function EnquirePage() {
-  if (!(await hasSiteFeature("enquiries"))) return <FeatureNotIncluded what="Enquiries" />
+  // Open to everyone: signed-out visitors see the details and the form's sign-in prompt.
+  const canEnquire = await canOfferEnquiry()
   return (
     <div className="relative flex-1 overflow-hidden">
       <Reveal className="relative mx-auto grid max-w-7xl gap-14 px-6 py-16 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-24">
@@ -53,7 +54,7 @@ export default async function EnquirePage() {
           </address>
         </div>
         <div className={`${glassSurface({ level: "strong" })} relative overflow-hidden rounded-tl-[24px] rounded-tr-[5rem] rounded-br-[24px] rounded-bl-[5rem] p-6 sm:rounded-tr-[8rem] sm:rounded-bl-[8rem] sm:p-12`}>
-          <EnquiryForm className="relative" />
+          {canEnquire ? <EnquiryForm className="relative" /> : <FeatureNotIncluded what="Enquiries" />}
         </div>
       </Reveal>
     </div>

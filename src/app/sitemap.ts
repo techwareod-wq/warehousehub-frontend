@@ -12,7 +12,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     { url: `${env.siteUrl}/`, changeFrequency: "daily", priority: 1 },
     { url: `${env.siteUrl}/search`, changeFrequency: "daily", priority: 0.8 },
-    { url: `${env.siteUrl}/nexus`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${env.siteUrl}/explore`, changeFrequency: "daily", priority: 0.8 },
+    { url: `${env.siteUrl}/enquire`, changeFrequency: "monthly", priority: 0.5 },
   ]
   try {
     const api = listingsApi(publicServerApi(3600))
@@ -25,8 +26,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch {
     // The API being down must not break the sitemap: serve the static part.
-    // While the site is feature-gated the feed answers 401 (no visitor here),
-    // so only the static part is served.
   }
   return entries
 }

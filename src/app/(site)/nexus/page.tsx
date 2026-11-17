@@ -21,7 +21,8 @@ import {
 import { GlassButtonLink, glassButton } from "@/components/glass"
 import { Reveal } from "@/components/site/reveal"
 import { SectionBadge, SectionIntro } from "@/components/site/section-heading"
-import { hasSiteFeature } from "@/features/users/lib/server-access"
+import { RequireSiteAccess } from "@/components/site/require-site-access"
+import { canOfferEnquiry, hasSiteFeature } from "@/features/users/lib/server-access"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -114,8 +115,17 @@ const TRUST = [
   },
 ]
 
-export default async function NexusPage() {
-  const [canSearch, canEnquire] = await Promise.all([hasSiteFeature("search"), hasSiteFeature("enquiries")])
+/** Signed-in only (proxy.ts), and the account needs some granted access. */
+export default function NexusPage() {
+  return (
+    <RequireSiteAccess returnTo="/nexus">
+      <NexusContent />
+    </RequireSiteAccess>
+  )
+}
+
+async function NexusContent() {
+  const [canSearch, canEnquire] = await Promise.all([hasSiteFeature("search"), canOfferEnquiry()])
   return (
     <div className="-mb-px flex flex-col text-white">
       <section className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden border-b border-white/10 pt-20 pb-16 sm:pt-24 lg:pb-24">

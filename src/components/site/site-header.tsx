@@ -2,14 +2,13 @@ import { Show, SignInButton, UserButton } from "@clerk/nextjs"
 import { auth } from "@clerk/nextjs/server"
 import { GlassButton } from "@/components/glass"
 import { glassClerkAppearance } from "@/components/glass/clerk-appearance"
-import { hasSiteFeature } from "@/features/users/lib/server-access"
+import { canOfferEnquiry } from "@/features/users/lib/server-access"
 import { SiteNav } from "./site-nav"
 
 export async function SiteHeader() {
-  const [canSearch, canEnquire, { userId }] = await Promise.all([hasSiteFeature("search"), hasSiteFeature("enquiries"), auth()])
+  const [canEnquire, { userId }] = await Promise.all([canOfferEnquiry(), auth()])
   return (
     <SiteNav
-      canSearch={canSearch}
       canEnquire={canEnquire}
       signedIn={!!userId}
       actions={

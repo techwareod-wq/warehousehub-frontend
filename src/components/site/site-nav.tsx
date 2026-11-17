@@ -6,6 +6,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import { GlassNav, GlassNavLink, glassButton, glassSurface } from "@/components/glass"
+import { finderEnabled } from "@/features/finder/lib/flag"
 import { cn } from "@/lib/utils"
 
 /**
@@ -15,12 +16,10 @@ import { cn } from "@/lib/utils"
  * explore map sizes itself to 100dvh − 4rem). Scrolling raises the glass.
  */
 export function SiteNav({
-  canSearch,
   canEnquire,
   signedIn,
   actions,
 }: {
-  canSearch: boolean
   canEnquire: boolean
   signedIn: boolean
   actions: React.ReactNode
@@ -38,8 +37,9 @@ export function SiteNav({
   }, [])
 
   const tabs = [
-    { href: "/explore", label: "Explore", show: canSearch },
-    { href: "/find", label: "Finder", show: canSearch && process.env.NEXT_PUBLIC_ENABLE_FINDER === "true" }, // FINDER (remove to uninstall)
+    // Explore and Finder are public: shown to everyone, signed in or not.
+    { href: "/explore", label: "Explore", show: true },
+    { href: "/find", label: "Finder", show: finderEnabled }, // FINDER (remove to uninstall)
     { href: "/nexus", label: "Nexus Engine", show: true },
     { href: "/enquire", label: "Contact", show: canEnquire },
     { href: "/account", label: "Account", show: signedIn },
