@@ -3,11 +3,13 @@ import { auth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { backendUrl } from "./backend-url"
 import { CLIENT_HEADER } from "./browser-client"
+import { FORWARDING_HEADERS, forwardingHeaders } from "./client-ip"
 
 /**
  * The browser → backend proxy behind /api/proxy/[...path]. The browser never
  * sees the API origin or a token: this attaches the Clerk session token (when
- * signed in) and forwards the call.
+ * signed in) and the visitor's IP for crunch's rate limit (client-ip.ts), and
+ * forwards the call.
  *
  * Guards:
  *  - only the API's own prefixes are reachable (no webhooks, no health);
@@ -22,6 +24,7 @@ const DROP_REQUEST = new Set([
   "host", "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailer",
   "transfer-encoding", "upgrade", "content-length", "accept-encoding", "cookie", "authorization",
   CLIENT_HEADER,
+  ...FORWARDING_HEADERS,
 ])
 
 const DROP_RESPONSE = new Set([
@@ -54,6 +57,8 @@ export async function proxyRequest(req: Request, segments: string[]): Promise<Re
   const { getToken } = await auth()
   const token = await getToken()
   if (token) headers.set("Authorization", `Bearer ${token}`)
+  // The visitor's IP + shared secret, so crunch rate-limits per visitor, not per Vercel IP.
+  for (const [k, v] of Object.entries(forwardingHeaders(req.headers))) headers.set(k, v)
 
   const target = new URL(`${backendUrl()}/${segments.map(encodeURIComponent).join("/")}`)
   target.search = new URL(req.url).search
